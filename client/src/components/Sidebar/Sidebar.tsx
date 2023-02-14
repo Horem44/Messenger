@@ -28,16 +28,14 @@ const Sidebar = () => {
       <Toolbar />
       <Divider />
       <List>
-        {["Ilya Yegorov", "Vlad", "Iryna", "Denis Kobets",].map(
-          (text) => (
-            <ListItem key={text} disablePadding>
-              <ListItemButton>
-                <PersonIcon />
-                <ListItemText primary={text} />
-              </ListItemButton>
-            </ListItem>
-          )
-        )}
+        {["Ilya Yegorov", "Vlad", "Iryna", "Denis Kobets"].map((text) => (
+          <ListItem key={text} disablePadding>
+            <ListItemButton>
+              <PersonIcon />
+              <ListItemText primary={text} sx={{ marginLeft: "1rem" }} />
+            </ListItemButton>
+          </ListItem>
+        ))}
       </List>
     </Drawer>
   );
