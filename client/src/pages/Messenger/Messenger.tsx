@@ -45,7 +45,7 @@ const Messenger = () => {
             p: 3,
             display: "flex",
             flexDirection: "column",
-            height: files.length !== 0 ? "70vh" : "calc(70vh + 90px)",
+            height: files.length !== 0 ? "60vh" : "calc(60vh + 90px)",
             overflowY: "scroll",
           }}
         >

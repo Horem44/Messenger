@@ -1,6 +1,6 @@
 import React from "react";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
-import { Box, Button } from "@mui/material";
+import { Box } from "@mui/material";
 import classes from "./FilePreview.module.css";
 import CloseIcon from "@mui/icons-material/Close";
 
