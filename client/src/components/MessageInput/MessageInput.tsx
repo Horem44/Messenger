@@ -11,9 +11,10 @@ import { messageActions } from "../../store/message-slice";
 
 interface Props {
   onSetFile: (file: File) => void;
+  files: File[];
 }
 
-const MessageInput: React.FC<Props> = ({ onSetFile }) => {
+const MessageInput: React.FC<Props> = ({ onSetFile, files }) => {
   const dispatch = useDispatch();
   const message = useSelector<RootState, string>(
     (state) => state.message.message
@@ -23,8 +24,32 @@ const MessageInput: React.FC<Props> = ({ onSetFile }) => {
     (state) => state.message.isEditing
   );
 
+  const currentConversation = useSelector<RootState, string>(
+    (state) => state.conversation.currentConversation
+  );
+
   const inputChangeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
     dispatch(messageActions.setMessage(e.target.value));
+  };
+
+  const sendMessageHandler = async (currentConversation: string) => {
+    if(message === ''){
+      return;
+    }
+
+    const url = "http://localhost:8080/message/send";
+    const formData = new FormData();
+
+    formData.append('id', currentConversation);
+    formData.append('text', message);
+
+    dispatch(messageActions.setMessage(""));
+
+    const res = await fetch(url, {
+      method: "post",
+      credentials: "include",
+      body: formData,
+    });
   };
 
   return (
@@ -48,7 +73,7 @@ const MessageInput: React.FC<Props> = ({ onSetFile }) => {
           sx={{ width: "60vw" }}
         />
         {!isEditing && (
-          <Button>
+          <Button onClick={sendMessageHandler.bind(this, currentConversation)}>
             <SendIcon fontSize="medium" />
           </Button>
         )}

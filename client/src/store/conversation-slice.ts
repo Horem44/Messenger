@@ -7,10 +7,12 @@ export interface Conversation {
 
 interface ConversationSlice {
   conversation: Conversation[];
+  currentConversation: string;
 }
 
 const initialConversationState: ConversationSlice = {
   conversation: [],
+  currentConversation: "",
 };
 
 const conversationSlice = createSlice({
@@ -22,6 +24,9 @@ const conversationSlice = createSlice({
     },
     setConversations: (state, action) => {
         state.conversation = action.payload;
+    },
+    setCurrentConversation: (state, action) => {
+        state.currentConversation = action.payload;
     }
   },
 });

@@ -72,7 +72,13 @@ const Sidebar = () => {
         <List>
           {conversations.map((conversation) => (
             <ListItem key={conversation.id} disablePadding>
-              <ListItemButton>
+              <ListItemButton
+                onClick={() =>
+                  dispatch(
+                    conversationActions.setCurrentConversation(conversation.id)
+                  )
+                }
+              >
                 <PersonIcon />
                 <ListItemText
                   primary={conversation.tag}

@@ -27,7 +27,7 @@ const FilePreview: React.FC<Props> = ({ files, onDeleteFile }: Props) => {
         if (allowedFileTypes.includes(file.type)) {
           const imgUrl = URL.createObjectURL(file);
           return (
-            <div className={classes.preview_container}>
+            <div className={classes.preview_container} key={file.name}>
               <button
                 className={classes.preview_close_btn}
                 onClick={onDeleteFile.bind(this, file)}
@@ -44,7 +44,7 @@ const FilePreview: React.FC<Props> = ({ files, onDeleteFile }: Props) => {
           );
         } else {
           return (
-            <div className={classes.preview_container}>
+            <div className={classes.preview_container} key={file.name}>
               <button
                 className={classes.preview_close_btn_file}
                 onClick={onDeleteFile.bind(this, file)}
