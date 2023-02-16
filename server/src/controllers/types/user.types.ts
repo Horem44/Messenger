@@ -1,6 +1,5 @@
 export interface registerUserBody extends Express.Request {
   body: {
-    email: string;
     tag: string;
     password: string;
   };
@@ -8,7 +7,7 @@ export interface registerUserBody extends Express.Request {
 
 export interface loginUserBody extends Express.Request {
   body: {
-    email: string;
+    tag: string;
     password: string;
   };
 }

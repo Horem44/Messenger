@@ -7,6 +7,7 @@ import express from "express";
 import multer from "multer";
 import { userRoutes } from "./routes";
 import {errorHandler} from "./middleware";
+import { conversationRoutes } from "./routes/conversation.routes";
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use(cookieParser());
 app.use(multer().any());
 
 app.use('/user', userRoutes);
+app.use('/conversation', conversationRoutes);
 
 app.use(errorHandler);
 
