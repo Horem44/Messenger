@@ -1,3 +1,4 @@
+import firebase from "firebase/compat/app";
 import { db } from "../../configs";
 
 export class MessageModel {
@@ -5,20 +6,19 @@ export class MessageModel {
   senderId: string;
   text: string;
   files: string[];
-  createdAt: any;
+  createdAt: string;
 
   constructor(
     conversationId: string,
     senderId: string,
     text: string,
     files: string[],
-    createdAt: any,
   ) {
     this.conversationId = conversationId;
     this.senderId = senderId;
     this.text = text;
     this.files = files;
-    this.createdAt = createdAt;
+    this.createdAt = new Date().toTimeString();
   }
 }
 

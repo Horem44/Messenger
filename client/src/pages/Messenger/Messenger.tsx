@@ -1,12 +1,42 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import Box from "@mui/material/Box";
 import MessageInput from "../../components/MessageInput/MessageInput";
 import Message from "../../components/Message/Message";
 import FilePreview from "../../components/FilePreview/FilePreview";
+import { useSelector } from "react-redux";
+import { RootState } from "../../store";
+import CircularProgress from "@mui/material/CircularProgress";
 
 const Messenger = () => {
   const [files, setFiles] = useState<File[]>([]);
+  const [messages, setMessages] = useState<any>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const currentConversation = useSelector<RootState, string>(
+    (state) => state.conversation.currentConversation
+  );
+
+  useEffect(() => {
+    const getMessages = async () => {
+      if (currentConversation === "") {
+        return;
+      }
+
+      setIsLoading(true);
+
+      const url = "http://localhost:8080/message/" + currentConversation;
+      const res = await fetch(url, {
+        credentials: "include",
+      });
+
+      const messages = await res.json();
+      setMessages(messages);
+      setIsLoading(false);
+    };
+
+    getMessages();
+  }, [currentConversation]);
 
   const setFileHandler = (file: File) => {
     if (files.find((f) => f.name === file.name)) {
@@ -49,15 +79,24 @@ const Messenger = () => {
             overflowY: "scroll",
           }}
         >
-          <Message type="in" />
-          <Message type="in" />
-          <Message type="in" />
-          <Message type="out" />
+          {isLoading && <CircularProgress/>}
+          {!isLoading &&
+            messages.map((message: any) => {
+              const type =
+                message.senderId === currentConversation ? "in" : "out";
+              return (
+                <Message
+                  type={type}
+                  text={message.text}
+                  createdAt={message.createdAt}
+                />
+              );
+            })}
         </Box>
         {files.length !== 0 && (
           <FilePreview files={files} onDeleteFile={deleteFileHandler} />
         )}
-        <MessageInput onSetFile={setFileHandler} />
+        <MessageInput onSetFile={setFileHandler} files={files} />
       </Box>
     </Box>
   );
