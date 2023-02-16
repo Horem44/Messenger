@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { useEffect, useState } from "react";
 import Drawer from "@mui/material/Drawer";
 import Toolbar from "@mui/material/Toolbar";
 import List from "@mui/material/List";
@@ -7,10 +7,50 @@ import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import PersonIcon from "@mui/icons-material/Person";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../../store";
+import {
+  Conversation,
+  conversationActions,
+} from "../../store/conversation-slice";
+import CircularProgress from "@mui/material/CircularProgress";
 
 const drawerWidth = 340;
 
 const Sidebar = () => {
+  const conversations = useSelector<RootState, Conversation[]>(
+    (state) => state.conversation.conversation
+  );
+
+  const dispatch = useDispatch();
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    const getConverstions = async () => {
+      setIsLoading(true);
+      try {
+        const url = "http://localhost:8080/conversation/all";
+        const res = await fetch(url, {
+          credentials: "include",
+        });
+
+        if (res.status !== 200) {
+          const error = await res.json();
+          throw new Error(error.message);
+        }
+
+        const conversations = await res.json();
+        dispatch(conversationActions.setConversations(conversations));
+        setIsLoading(false);
+      } catch (err) {
+        setIsLoading(false);
+        console.log(err);
+      }
+    };
+
+    getConverstions();
+  }, [dispatch]);
+
   return (
     <Drawer
       sx={{
@@ -27,16 +67,22 @@ const Sidebar = () => {
     >
       <Toolbar />
       <Divider />
-      <List>
-        {["Ilya Yegorov", "Vlad", "Iryna", "Denis Kobets"].map((text) => (
-          <ListItem key={text} disablePadding>
-            <ListItemButton>
-              <PersonIcon />
-              <ListItemText primary={text} sx={{ marginLeft: "1rem" }} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
+      {isLoading && <CircularProgress />}
+      {!isLoading && (
+        <List>
+          {conversations.map((conversation) => (
+            <ListItem key={conversation.id} disablePadding>
+              <ListItemButton>
+                <PersonIcon />
+                <ListItemText
+                  primary={conversation.tag}
+                  sx={{ marginLeft: "1rem" }}
+                />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+      )}
     </Drawer>
   );
 };

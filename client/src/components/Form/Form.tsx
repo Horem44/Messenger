@@ -1,10 +1,11 @@
 import { Box, Button, FormControl, TextField } from "@mui/material";
 import React, { useReducer, useRef } from "react";
-import EmailIcon from "@mui/icons-material/Email";
 import LockIcon from "@mui/icons-material/Lock";
 import AlternateEmailIcon from "@mui/icons-material/AlternateEmail";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { authActions } from "../../store/auth-slice";
 
-const emailRegExp = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
 const tagRegExp = /^[a-z0-9]+$/i;
 
 type Props = {
@@ -12,37 +13,30 @@ type Props = {
 };
 
 interface validationState {
-  isEmailValid: boolean;
   isPasswordValid: boolean;
   isTagValid: boolean;
 }
 
 const initialValidationState: validationState = {
-  isEmailValid: true,
   isPasswordValid: true,
   isTagValid: true,
 };
 
 interface action {
   type:
-    | "EMAIL_IS_NOT_VALID"
     | "PASSWORD_IS_NOT_VALID"
     | "TAG_IS_NOT_VALID"
-    | "EMAIL_IS_VALID"
     | "PASSWORD_IS_VALID"
     | "TAG_IS_VALID";
 }
 
 const validationReducer = (state: validationState, action: action) => {
   switch (action.type) {
-    case "EMAIL_IS_VALID":
-      return { ...state, isEmailValid: true };
     case "PASSWORD_IS_VALID":
       return { ...state, isPasswordValid: true };
     case "TAG_IS_VALID":
       return { ...state, isTagValid: true };
-    case "EMAIL_IS_NOT_VALID":
-      return { ...state, isEmailValid: false };
+
     case "PASSWORD_IS_NOT_VALID":
       return { ...state, isPasswordValid: false };
     case "TAG_IS_NOT_VALID":
@@ -53,27 +47,17 @@ const validationReducer = (state: validationState, action: action) => {
 };
 
 const Form: React.FC<Props> = ({ type }: Props) => {
+  const dispatchAuth = useDispatch();
+  const navigate = useNavigate();
   const [validationState, dispatch] = useReducer(
     validationReducer,
     initialValidationState
   );
 
-  const emailInputRef = useRef<HTMLInputElement>(null);
   const tagInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
-  const isFormValid = (
-    email: string,
-    password: string,
-    tag: string | undefined
-  ) => {
-    if (email.trim().length === 0 || !emailRegExp.test(email)) {
-      dispatch({ type: "EMAIL_IS_NOT_VALID" });
-      return false;
-    } else {
-      dispatch({ type: "EMAIL_IS_VALID" });
-    }
-
+  const isFormValid = (password: string, tag: string | undefined) => {
     if (password.trim().length === 0 || password.length < 6) {
       dispatch({ type: "PASSWORD_IS_NOT_VALID" });
       return false;
@@ -95,14 +79,46 @@ const Form: React.FC<Props> = ({ type }: Props) => {
     return true;
   };
 
-  const submitHandler = () => {
-    const email = emailInputRef.current!.value;
+  const submitHandler = async () => {
     const password = passwordInputRef.current!.value;
     const tag = tagInputRef.current?.value;
 
-    const isValid = isFormValid(email, password, tag);
+    const isValid = isFormValid(password, tag);
 
-    console.log(isValid);
+    if (!isValid) {
+      return;
+    }
+
+    const path = type === "login" ? "login" : "register";
+
+    const url = "http://localhost:8080/user/" + path;
+
+    const userData = {
+      tag,
+      password,
+    };
+
+    try {
+      const res = await fetch(url, {
+        method: "post",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(userData),
+      });
+
+      if (res.status !== 200) {
+        const error = await res.json();
+        console.log(error);
+        throw new Error(error.message);
+      }
+
+      dispatchAuth(authActions.login());
+      navigate("/messenger");
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   return (
@@ -136,49 +152,24 @@ const Form: React.FC<Props> = ({ type }: Props) => {
             marginBottom: "4rem",
           }}
         >
-          <EmailIcon />
+          <AlternateEmailIcon />
           <TextField
-            id="email-input"
-            type="email"
-            error={!validationState.isEmailValid}
-            helperText={!validationState.isEmailValid ? "Incorrect email" : ""}
-            label="Email"
-            inputRef={emailInputRef}
+            id="tag-input"
+            type="text"
+            label="Tag"
+            error={!validationState.isTagValid}
+            inputRef={tagInputRef}
+            helperText={
+              !validationState.isTagValid
+                ? "Only letters and numbers allowed"
+                : ""
+            }
             sx={{
               width: "80%",
               marginLeft: "1rem",
             }}
           />
         </Box>
-
-        {type === "register" && (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: "4rem",
-            }}
-          >
-            <AlternateEmailIcon />
-            <TextField
-              id="tag-input"
-              type="text"
-              label="Tag"
-              error={!validationState.isTagValid}
-              inputRef={tagInputRef}
-              helperText={
-                !validationState.isTagValid
-                  ? "Only letters and numbers allowed"
-                  : ""
-              }
-              sx={{
-                width: "80%",
-                marginLeft: "1rem",
-              }}
-            />
-          </Box>
-        )}
 
         <Box
           sx={{

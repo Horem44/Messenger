@@ -1,60 +1,140 @@
-import React from "react";
-import { styled, alpha } from "@mui/material/styles";
-import InputBase from "@mui/material/InputBase";
+import React, { useEffect, useState } from "react";
 import SearchIcon from "@mui/icons-material/Search";
+import TextField from "@mui/material/TextField";
+import Autocomplete from "@mui/material/Autocomplete";
+import { CircularProgress } from "@mui/material";
+import { useDispatch } from "react-redux";
+import { conversationActions } from "../../store/conversation-slice";
 
-const Search = styled("div")(({ theme }) => ({
-  position: "relative",
-  borderRadius: theme.shape.borderRadius,
-  backgroundColor: alpha(theme.palette.common.white, 0.15),
-  "&:hover": {
-    backgroundColor: alpha(theme.palette.common.white, 0.25),
-  },
-  marginLeft: 0,
-  width: "100%",
-  [theme.breakpoints.up("sm")]: {
-    marginLeft: theme.spacing(1),
-    width: "auto",
-  },
-}));
-
-const SearchIconWrapper = styled("div")(({ theme }) => ({
-  padding: theme.spacing(0, 2),
-  height: "100%",
-  position: "absolute",
-  pointerEvents: "none",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-}));
-
-const StyledInputBase = styled(InputBase)(({ theme }) => ({
-  color: "inherit",
-  "& .MuiInputBase-input": {
-    padding: theme.spacing(1, 1, 1, 0),
-    paddingLeft: `calc(1em + ${theme.spacing(4)})`,
-    transition: theme.transitions.create("width"),
-    width: "100%",
-    [theme.breakpoints.up("sm")]: {
-      width: "15ch",
-      "&:focus": {
-        width: "20ch",
-      },
-    },
-  },
-}));
+interface User {
+  tag: string;
+  id: string;
+}
 
 const FriendSearchBar = () => {
+  const [open, setOpen] = useState<boolean>(false);
+  const [users, setUsers] = useState<User[]>([]);
+  const loading = open && users.length === 0;
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    let active = true;
+
+    if (!loading) {
+      return undefined;
+    }
+
+    const getAllUsers = async () => {
+      try {
+        const url = "http://localhost:8080/user/all";
+        const res = await fetch(url, {
+          credentials: "include",
+        });
+
+        if(res.status !== 200){
+          const error = await res.json();
+          throw new Error(error.message);
+        }
+
+        const users = await res.json();
+
+        if (active) {
+          setUsers(users);
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    getAllUsers();
+
+    return () => {
+      active = false;
+    };
+  }, [loading]);
+
+  const createConversationHandler = async (id: string) => {
+    try {
+      const url = "http://localhost:8080/conversation/new";
+
+      const res = await fetch(url, {
+        method: "post",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ id }),
+      });
+
+      if(res.status === 409){
+        return;
+      }
+
+      if (res.status !== 200) {
+        const error = await res.json();
+        throw new Error(error.message);
+      }
+
+      const member = await res.json();
+      dispatch(conversationActions.addConversation(member));
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   return (
-    <Search>
-      <SearchIconWrapper>
-        <SearchIcon />
-      </SearchIconWrapper>
-      <StyledInputBase
-        placeholder="Search friends..."
-        inputProps={{ "aria-label": "search" }}
+    <>
+      <SearchIcon
+        sx={{
+          marginRight: "1rem",
+        }}
+        fontSize="medium"
       />
-    </Search>
+
+      <Autocomplete
+        id="asynchronous-demo"
+        sx={{ width: 300 }}
+        open={open}
+        onOpen={() => {
+          setOpen(true);
+        }}
+        onClose={() => {
+          setOpen(false);
+        }}
+        isOptionEqualToValue={(option, value) => option.tag === value.tag}
+        getOptionLabel={(option) => option.tag || ""}
+        options={users}
+        loading={true}
+        renderOption={(props, option) => {
+          return (
+            <li
+              {...props}
+              key={option.id}
+              onClick={createConversationHandler.bind(this, option.id)}
+            >
+              {option.tag}
+            </li>
+          );
+        }}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            placeholder="Search friends..."
+            InputProps={{
+              ...params.InputProps,
+              endAdornment: (
+                <React.Fragment>
+                  {loading ? (
+                    <CircularProgress color="inherit" size={20} />
+                  ) : null}
+                  {params.InputProps.endAdornment}
+                </React.Fragment>
+              ),
+            }}
+          />
+        )}
+      />
+    </>
   );
 };
 
