@@ -61,7 +61,7 @@ export const sendMessage = async (
       Object.assign({}, new MessageModel(conversationId, userId, text, []))
     );
 
-    const message =  (await snapshot.get()).data();
+    const message = (await snapshot.get()).data();
     return res.status(200).json(message);
   } catch (err) {
     console.log(err);
@@ -96,9 +96,54 @@ export const getMessages = async (
       return doc.data();
     });
 
+    const getNumber = (t: string) => +t.replace(/:/g, "");
+
+    messages.sort(
+      ({ createdAt: a }, { createdAt: b }) => getNumber(a) - getNumber(b)
+    );
+
     return res.status(200).json(messages);
   } catch (err) {
     console.log(err);
     next(err);
   }
 };
+
+export const updateMessage = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const messageId = req.body.messageId;
+    const newText = req.body.text;
+
+    const snapshot = await Message.where("id", "==", messageId).get();
+    await snapshot.docs[0].ref.update({
+      text: newText,
+    });
+
+    res.status(200).end();
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+export const deleteMessage = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const messageId = req.params.id;
+        console.log(messageId);
+      const snapshot = await Message.where("id", "==", messageId).get();
+      await snapshot.docs[0].ref.delete();
+  
+      res.status(200).end();
+    } catch (err) {
+      console.log(err);
+      next(err);
+    }
+  };

@@ -22,6 +22,10 @@ const Sidebar = () => {
     (state) => state.conversation.conversation
   );
 
+  const currentConversation = useSelector<RootState, string>(
+    (state) => state.conversation.currentConversation
+  );
+
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -73,6 +77,8 @@ const Sidebar = () => {
           {conversations.map((conversation) => (
             <ListItem key={conversation.id} disablePadding>
               <ListItemButton
+                divider={true}
+                disabled={currentConversation === conversation.id}
                 onClick={() =>
                   dispatch(
                     conversationActions.setCurrentConversation(conversation.id)

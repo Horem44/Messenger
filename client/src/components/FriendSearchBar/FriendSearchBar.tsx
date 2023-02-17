@@ -3,8 +3,9 @@ import SearchIcon from "@mui/icons-material/Search";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
 import { CircularProgress } from "@mui/material";
-import { useDispatch } from "react-redux";
-import { conversationActions } from "../../store/conversation-slice";
+import { useDispatch, useSelector } from "react-redux";
+import { Conversation, conversationActions } from "../../store/conversation-slice";
+import { RootState } from "../../store";
 
 interface User {
   tag: string;
@@ -16,6 +17,10 @@ const FriendSearchBar = () => {
   const [users, setUsers] = useState<User[]>([]);
   const loading = open && users.length === 0;
   const dispatch = useDispatch();
+  const conversations = useSelector<RootState, Conversation[]>(
+    (state) => state.conversation.conversation
+  );
+
 
   useEffect(() => {
     let active = true;
@@ -54,6 +59,10 @@ const FriendSearchBar = () => {
   }, [loading]);
 
   const createConversationHandler = async (id: string) => {
+    if(conversations.find((conversation: Conversation) => conversation.id === id)){
+      return;
+    }
+
     try {
       const url = "http://localhost:8080/conversation/new";
 
@@ -65,10 +74,6 @@ const FriendSearchBar = () => {
         credentials: "include",
         body: JSON.stringify({ id }),
       });
-
-      if(res.status === 409){
-        return;
-      }
 
       if (res.status !== 200) {
         const error = await res.json();
@@ -100,11 +105,12 @@ const FriendSearchBar = () => {
         }}
         onClose={() => {
           setOpen(false);
+          setUsers([]);
         }}
         isOptionEqualToValue={(option, value) => option.tag === value.tag}
         getOptionLabel={(option) => option.tag || ""}
         options={users}
-        loading={true}
+        loading={loading}
         renderOption={(props, option) => {
           return (
             <li

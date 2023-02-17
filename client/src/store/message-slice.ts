@@ -3,11 +3,13 @@ import { createSlice } from "@reduxjs/toolkit";
 interface messageSlice {
   message: string;
   isEditing: boolean;
+  messageToUpdateId: string;
 }
 
 const initialMessagetate: messageSlice = {
   message: "",
   isEditing: false,
+  messageToUpdateId: "",
 };
 
 const messageSlice = createSlice({
@@ -15,7 +17,8 @@ const messageSlice = createSlice({
   initialState: initialMessagetate,
   reducers: {
     edit: (state, action) => {
-      state.message = action.payload;
+      state.message = action.payload.message;
+      state.messageToUpdateId = action.payload.id;
       state.isEditing = true;
     },
     delete: (state) => {
@@ -23,7 +26,6 @@ const messageSlice = createSlice({
     },
     finishEditing: (state) => {
       state.isEditing = false;
-      state.message = "";
     },
     setMessage: (state, action) => {
       state.message = action.payload;
