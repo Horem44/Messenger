@@ -14,7 +14,7 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
         req.body.auth = verifiedToken;
         next();
     } catch (err){
-        req.body.isNotAuth = true;
+        req.body.auth = null;
         next();
     }
 }
