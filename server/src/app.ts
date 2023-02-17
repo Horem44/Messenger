@@ -5,10 +5,8 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import multer from "multer";
-import { userRoutes } from "./routes";
+import { userRoutes, conversationRoutes, messageRoutes, authRoutes } from "./routes";
 import {errorHandler} from "./middleware";
-import { conversationRoutes } from "./routes/conversation.routes";
-import { messageRoutes } from "./routes/message.routes";
 
 const app = express();
 
@@ -31,6 +29,7 @@ app.use(multer().any());
 app.use('/user', userRoutes);
 app.use('/conversation', conversationRoutes);
 app.use('/message', messageRoutes);
+app.use('/auth', authRoutes);
 
 app.use(errorHandler);
 
