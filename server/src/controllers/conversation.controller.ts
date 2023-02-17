@@ -10,7 +10,7 @@ export const createConversation = async (
   try {
     const memberId = req.body.id;
     const userId = req.body.auth.userId;
-    const members = [userId, memberId];
+    const members = [userId, memberId].sort();
 
     const existingConversation = await Conversation.where(
       "members",
@@ -18,16 +18,15 @@ export const createConversation = async (
       members
     ).get();
 
-    if (!existingConversation.empty) {
-      return res.status(409).end();
-    }
+    // if (!existingConversation.empty) {
+    //   return res.status(409).end();
+    // }
 
     await Conversation.add(Object.assign({}, new ConversationModel(members)));
 
     const memberSnapshot = await User.where('id', '==', memberId).get();
     const member = await memberSnapshot.docs[0].data();
 
-    console.log(member);
 
     return res.status(200).json(member);
   } catch (err) {

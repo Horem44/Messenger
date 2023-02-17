@@ -49,16 +49,20 @@ export const sendMessage = async (
     const memberId = req.body.id;
     const text = req.body.text;
 
-    const conversationSnapshot = await Conversation.where("members", "==", [
-      userId,
-      memberId,
-    ]).get();
+    const conversationSnapshot = await Conversation.where(
+      "members",
+      "==",
+      [memberId, userId].sort()
+    ).get();
 
     const conversationId = await conversationSnapshot.docs[0].data().id;
 
-    await Message.add(
+    const snapshot = await Message.add(
       Object.assign({}, new MessageModel(conversationId, userId, text, []))
     );
+
+    const message =  (await snapshot.get()).data();
+    return res.status(200).json(message);
   } catch (err) {
     console.log(err);
     next(err);
@@ -74,17 +78,22 @@ export const getMessages = async (
     const userId = req.body.auth.userId;
     const memberId = req.params.id;
 
-    const conversationSnapshot = await Conversation.where("members", "==", [
-      userId,
-      memberId,
-    ]).get();
+    const conversationSnapshot = await Conversation.where(
+      "members",
+      "==",
+      [memberId, userId].sort()
+    ).get();
 
     const conversationId = await conversationSnapshot.docs[0].data().id;
 
-    const snapshot = await Message.where("conversationId", '==', conversationId).get();
+    const snapshot = await Message.where(
+      "conversationId",
+      "==",
+      conversationId
+    ).get();
 
-    const messages = snapshot.docs.map(doc => {
-        return doc.data();
+    const messages = snapshot.docs.map((doc) => {
+      return doc.data();
     });
 
     return res.status(200).json(messages);

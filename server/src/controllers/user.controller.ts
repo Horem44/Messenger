@@ -41,7 +41,10 @@ export const registerUser = async (
       maxAge: 3600000,
     });
 
-    return res.status(200).end();
+    const user = await newUser.data()!;
+    delete user.hash;
+
+    return res.status(200).json(user);
   } catch (err) {
     next(err);
   }
@@ -85,7 +88,9 @@ export const loginUser = async (
       maxAge: 3600000,
     });
 
-    return res.status(200).end();
+    delete userData.hash;
+
+    return res.status(200).json(userData);
   } catch (err) {
     next(err);
   }
@@ -109,8 +114,6 @@ export const getAllUsers = async (
       delete user.hash;
       return user;
     });
-
-    console.log(users);
 
     return res.status(200).json(users);
   } catch (err) {

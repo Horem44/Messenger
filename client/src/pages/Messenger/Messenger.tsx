@@ -1,21 +1,69 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import Box from "@mui/material/Box";
 import MessageInput from "../../components/MessageInput/MessageInput";
 import Message from "../../components/Message/Message";
 import FilePreview from "../../components/FilePreview/FilePreview";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store";
 import CircularProgress from "@mui/material/CircularProgress";
+import { io } from "socket.io-client";
+import { Socket } from "dgram";
+import { currentUser } from "../../store/auth-slice";
+import { messageActions } from "../../store/message-slice";
+
+interface ArrivalMessage {
+  senderId: string;
+  text: string;
+  createdAt: string;
+}
 
 const Messenger = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [messages, setMessages] = useState<any>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const socket = useRef<any>();
+  const dispatch = useDispatch();
+  const [arrivalMessage, setArrivalMessage] = useState<ArrivalMessage | null>(
+    null
+  );
+
+  const message = useSelector<RootState, string>(
+    (state) => state.message.message
+  );
+
+  const currentUser = useSelector<RootState, currentUser>(
+    (state) => state.auth.currentUser
+  );
 
   const currentConversation = useSelector<RootState, string>(
     (state) => state.conversation.currentConversation
   );
+
+  useEffect(() => {
+    socket.current = io("ws://localhost:8900");
+    socket.current.on("getMessage", (data: any) => {
+      console.log(data);
+      setArrivalMessage({
+        senderId: data.senderId,
+        text: data.text,
+        createdAt: new Date().toTimeString(),
+      });
+    });
+  }, []);
+
+  useEffect(() => {
+    arrivalMessage &&
+      currentConversation === arrivalMessage.senderId &&
+      setMessages((prev: any) => [...prev, arrivalMessage]);
+  }, [arrivalMessage, currentConversation]);
+
+  useEffect(() => {
+    socket.current.emit("addUser", currentUser.id);
+    socket.current.on("getUsers", (users: currentUser) => {
+      console.log(users);
+    });
+  }, [currentUser]);
 
   useEffect(() => {
     const getMessages = async () => {
@@ -53,6 +101,35 @@ const Messenger = () => {
     setFiles(newFiles);
   };
 
+  const sendMessageHandler = async (currentConversation: string) => {
+    if (message === "") {
+      return;
+    }
+
+    const url = "http://localhost:8080/message/send";
+    const formData = new FormData();
+
+    socket.current.emit("sendMessage", {
+      senderId: currentUser.id,
+      receiverId: currentConversation,
+      text: message,
+    });
+
+    formData.append("id", currentConversation);
+    formData.append("text", message);
+
+    dispatch(messageActions.setMessage(""));
+
+    const res = await fetch(url, {
+      method: "post",
+      credentials: "include",
+      body: formData,
+    });
+
+    const newMessage = await res.json();
+    setMessages([...messages, newMessage]);
+  };
+
   return (
     <Box sx={{ display: "flex" }}>
       <Sidebar />
@@ -79,7 +156,7 @@ const Messenger = () => {
             overflowY: "scroll",
           }}
         >
-          {isLoading && <CircularProgress/>}
+          {isLoading && <CircularProgress />}
           {!isLoading &&
             messages.map((message: any) => {
               const type =
@@ -96,7 +173,11 @@ const Messenger = () => {
         {files.length !== 0 && (
           <FilePreview files={files} onDeleteFile={deleteFileHandler} />
         )}
-        <MessageInput onSetFile={setFileHandler} files={files} />
+        <MessageInput
+          onSetFile={setFileHandler}
+          files={files}
+          onSendMessage={sendMessageHandler}
+        />
       </Box>
     </Box>
   );
