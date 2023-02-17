@@ -1,11 +1,21 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+export interface currentUser {
+  id: string;
+  tag: string;
+}
+
 interface authSlice {
   isAuth: boolean;
+  currentUser: currentUser;
 }
 
 const initialAuthState: authSlice = {
   isAuth: false,
+  currentUser: {
+    id: "",
+    tag: "",
+  },
 };
 
 const authSlice = createSlice({
@@ -18,6 +28,9 @@ const authSlice = createSlice({
     logout: (state) => {
       state.isAuth = false;
     },
+    setCurrentUser: (state, action) => {
+      state.currentUser = action.payload;
+    }
   },
 });
 

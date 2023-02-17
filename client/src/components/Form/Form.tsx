@@ -114,6 +114,9 @@ const Form: React.FC<Props> = ({ type }: Props) => {
         throw new Error(error.message);
       }
 
+      const user = await res.json();
+      
+      dispatchAuth(authActions.setCurrentUser(user));
       dispatchAuth(authActions.login());
       navigate("/messenger");
     } catch (err) {
