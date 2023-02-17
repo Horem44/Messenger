@@ -8,15 +8,34 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store";
 import CircularProgress from "@mui/material/CircularProgress";
 import { io } from "socket.io-client";
-import { Socket } from "dgram";
 import { currentUser } from "../../store/auth-slice";
 import { messageActions } from "../../store/message-slice";
 
 interface ArrivalMessage {
+  id: string;
   senderId: string;
   text: string;
   createdAt: string;
 }
+
+interface UpdatedMessage {
+  id: string;
+  senderId: string;
+  text: string;
+  createdAt: string;
+}
+
+interface DeletedMessage {
+  id: string;
+  senderId: string;
+}
+
+const getTime = () => {
+  const date = new Date();
+  const seconds =
+    date.getSeconds() < 10 ? "0" + date.getSeconds() : date.getSeconds();
+  return date.getHours() + ":" + date.getMinutes() + ":" + seconds;
+};
 
 const Messenger = () => {
   const [files, setFiles] = useState<File[]>([]);
@@ -24,7 +43,20 @@ const Messenger = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const socket = useRef<any>();
   const dispatch = useDispatch();
+
+  const messageToUpdateId = useSelector<RootState, string>(
+    (state) => state.message.messageToUpdateId
+  );
+
   const [arrivalMessage, setArrivalMessage] = useState<ArrivalMessage | null>(
+    null
+  );
+
+  const [updatedMessage, setUpdatedMessage] = useState<UpdatedMessage | null>(
+    null
+  );
+
+  const [deletedMessage, setDeletedMessage] = useState<DeletedMessage | null>(
     null
   );
 
@@ -42,21 +74,68 @@ const Messenger = () => {
 
   useEffect(() => {
     socket.current = io("ws://localhost:8900");
+
     socket.current.on("getMessage", (data: any) => {
-      console.log(data);
       setArrivalMessage({
+        id: data.messageId,
         senderId: data.senderId,
         text: data.text,
-        createdAt: new Date().toTimeString(),
+        createdAt: getTime(),
       });
     });
   }, []);
+
+  useEffect(() => {
+    socket.current.on("getUpdatedMessage", (data: any) => {
+      setUpdatedMessage({
+        id: data.messageId,
+        senderId: data.senderId,
+        text: data.text,
+        createdAt: getTime(),
+      });
+    });
+  }, []);
+
+  useEffect(() => {
+    socket.current.on("onDeleteMessage", (data: any) => {
+      console.log(data);
+      setDeletedMessage({
+        id: data.messageId,
+        senderId: data.senderId,
+      });
+    });
+  }, [])
 
   useEffect(() => {
     arrivalMessage &&
       currentConversation === arrivalMessage.senderId &&
       setMessages((prev: any) => [...prev, arrivalMessage]);
   }, [arrivalMessage, currentConversation]);
+
+  useEffect(() => {
+    if (updatedMessage && currentConversation === updatedMessage.senderId) {
+      const updatedMessageIndex = messages.findIndex(
+        (message: any) => message.id === updatedMessage.id
+      );
+        console.log(messages);
+      if (updatedMessageIndex !== -1) {
+        const newMessages = [...messages];
+        newMessages[updatedMessageIndex].text = updatedMessage.text;
+        console.log(newMessages);
+        setMessages(newMessages);
+      }
+    }
+  }, [updatedMessage, currentConversation]);
+
+  useEffect(() => {
+    if (deletedMessage && currentConversation === deletedMessage.senderId) {
+      const newMessages = messages.filter((message: any) => {
+        return message.id !== deletedMessage.id;
+      });
+
+      setMessages(newMessages);
+    }
+  }, [deletedMessage, currentConversation]);
 
   useEffect(() => {
     socket.current.emit("addUser", currentUser.id);
@@ -79,6 +158,7 @@ const Messenger = () => {
       });
 
       const messages = await res.json();
+
       setMessages(messages);
       setIsLoading(false);
     };
@@ -109,12 +189,6 @@ const Messenger = () => {
     const url = "http://localhost:8080/message/send";
     const formData = new FormData();
 
-    socket.current.emit("sendMessage", {
-      senderId: currentUser.id,
-      receiverId: currentConversation,
-      text: message,
-    });
-
     formData.append("id", currentConversation);
     formData.append("text", message);
 
@@ -127,8 +201,75 @@ const Messenger = () => {
     });
 
     const newMessage = await res.json();
+    console.log(newMessage.id);
+
+    socket.current.emit("sendMessage", {
+      id: newMessage.id,
+      senderId: currentUser.id,
+      receiverId: currentConversation,
+      text: message,
+    });
+
     setMessages([...messages, newMessage]);
   };
+
+  const updateMessageHandler = async (messageId: string) => {
+    if (message === "") {
+      return;
+    }
+
+    const url = "http://localhost:8080/message/update";
+
+    socket.current.emit("updateMessage", {
+      id: messageToUpdateId,
+      senderId: currentUser.id,
+      receiverId: currentConversation,
+      text: message,
+    });
+
+    const res = await fetch(url, {
+      method: "post",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        messageId,
+        text: message,
+      }),
+    });
+
+    const updatedMessageIndex = messages.findIndex(
+      (message: any) => message.id === messageToUpdateId
+    );
+      
+    if (updatedMessageIndex !== -1) {
+      const newMessages = [...messages];
+      newMessages[updatedMessageIndex].text = message;
+      setMessages(newMessages);
+      dispatch(messageActions.setMessage(""));
+    }
+  };
+
+  const deleteMessageHandler = async (messageId: string) => {
+    const url = "http://localhost:8080/message/" + messageId;
+    const res = await fetch(url, {
+      method: 'delete',
+      credentials: "include",
+    });
+
+    socket.current.emit("deleteMessage", {
+      id: messageId,
+      senderId: currentUser.id,
+      receiverId: currentConversation,
+    });
+
+    const newMessages = messages.filter((message: any) => {
+      return message.id !== messageId;
+    });
+
+    setMessages(newMessages);
+  }
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -163,9 +304,12 @@ const Messenger = () => {
                 message.senderId === currentConversation ? "in" : "out";
               return (
                 <Message
+                  key={message.id}
+                  id={message.id}
                   type={type}
                   text={message.text}
                   createdAt={message.createdAt}
+                  onDeleteMessage={deleteMessageHandler}
                 />
               );
             })}
@@ -177,6 +321,7 @@ const Messenger = () => {
           onSetFile={setFileHandler}
           files={files}
           onSendMessage={sendMessageHandler}
+          onUpdateMessage={updateMessageHandler}
         />
       </Box>
     </Box>

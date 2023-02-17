@@ -9,9 +9,11 @@ type Props = {
   type: "in" | "out";
   text: string;
   createdAt: string;
+  id: string;
+  onDeleteMessage: (messageId: string) => void;
 };
 
-const Message: React.FC<Props> = ({ type, text, createdAt }: Props) => {
+const Message: React.FC<Props> = ({ type, text, createdAt, id, onDeleteMessage }: Props) => {
   const alignSelf = type === "out" ? "flex-end" : "flex-start";
   const background =
     type === "out" ? "rgba(142, 215, 255, 0.58)" : "rgba(179, 254, 164, 0.58)";
@@ -43,10 +45,10 @@ const Message: React.FC<Props> = ({ type, text, createdAt }: Props) => {
     setContextMenu(null);
   };
 
-  const handleEdit = (e: React.MouseEvent) => {
+  const handleEdit = () => {
     setContextMenu(null);
-    const message = document.getElementById("msg")?.textContent;
-    dispatch(messageActions.edit(message));
+    const message = document.getElementById(id)?.textContent;
+    dispatch(messageActions.edit({message, id}));
   };
 
   return (
@@ -67,7 +69,7 @@ const Message: React.FC<Props> = ({ type, text, createdAt }: Props) => {
           cursor: type === "out" ? "context-menu" : "arrow",
         }}
       >
-        <Typography paragraph id="msg">
+        <Typography paragraph id={id}>
           {text}
         </Typography>
       </Box>
@@ -90,7 +92,10 @@ const Message: React.FC<Props> = ({ type, text, createdAt }: Props) => {
         }
       >
         <MenuItem onClick={handleEdit}>Edit</MenuItem>
-        <MenuItem onClick={handleClose}>Delete</MenuItem>
+        <MenuItem onClick={() => {
+          handleClose()
+          onDeleteMessage(id)
+        }}>Delete</MenuItem>
       </Menu>
     </Box>
   );

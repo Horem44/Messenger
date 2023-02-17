@@ -14,8 +14,13 @@ interface User {
 let users:User[] = [];
 
 const addUser = (userId:string, socketId:string) => {
-    !users.some(user => user.userId === userId) &&
+    const userIndex = users.findIndex(user => user.userId === userId);
+
+    if(userIndex !== -1){
+        users[userIndex] = {userId: users[userIndex].userId, socketId: socketId};
+    }else{
         users.push({userId, socketId});
+    }
 };
 
 const removeUser = (socketId: string) => {
@@ -38,17 +43,36 @@ io.on("connection", (socket: Socket) => {
         io.emit("getUsers", users);
     });
 
-    socket.on("sendMessage", ({senderId, receiverId, text}) => {
-        console.log(socket.id);
+    socket.on("sendMessage", ({senderId, receiverId, text, id}) => {
+        console.log(id);
         const user = getUser(receiverId);
         io.to(user!.socketId).emit("getMessage", {
+            messageId: id,
             senderId,
             text,
         })
     });
 
+    socket.on("updateMessage", ({senderId, receiverId, text, id}) => {
+        console.log(id);
+        const user = getUser(receiverId);
+        io.to(user!.socketId).emit("getUpdatedMessage", {
+            messageId: id,
+            senderId,
+            text,
+        });
+    });
+
+    socket.on("deleteMessage", ({senderId, receiverId, id}) => {
+        console.log(id);
+        const user = getUser(receiverId);
+        io.to(user!.socketId).emit("onDeleteMessage", {
+            messageId: id,
+            senderId,
+        });
+    });
+
     socket.on("disconnect", () => {
-        console.log("user disconnected");
         removeUser(socket.id);
         io.emit("getUsers", users);
     })

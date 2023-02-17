@@ -13,12 +13,22 @@ interface Props {
   onSetFile: (file: File) => void;
   files: File[];
   onSendMessage: (currentConversation: string) => void;
+  onUpdateMessage: (messageId: string) => void;
 }
 
-const MessageInput: React.FC<Props> = ({ onSetFile, files, onSendMessage }) => {
+const MessageInput: React.FC<Props> = ({
+  onSetFile,
+  files,
+  onSendMessage,
+  onUpdateMessage,
+}) => {
   const dispatch = useDispatch();
   const message = useSelector<RootState, string>(
     (state) => state.message.message
+  );
+
+  const messageToUpdateId = useSelector<RootState, string>(
+    (state) => state.message.messageToUpdateId
   );
 
   const isEditing = useSelector<RootState, boolean>(
@@ -59,7 +69,12 @@ const MessageInput: React.FC<Props> = ({ onSetFile, files, onSendMessage }) => {
           </Button>
         )}
         {isEditing && (
-          <Button>
+          <Button
+            onClick={() => {
+              dispatch(messageActions.finishEditing());
+              onUpdateMessage(messageToUpdateId);
+            }}
+          >
             <CheckIcon fontSize="medium" />
           </Button>
         )}

@@ -18,15 +18,16 @@ export const createConversation = async (
       members
     ).get();
 
-    // if (!existingConversation.empty) {
-    //   return res.status(409).end();
-    // }
+    if (!existingConversation.empty) {
+      const memberSnapshot = await User.where("id", "==", memberId).get();
+      const member = await memberSnapshot.docs[0].data();
+      return res.status(200).json(member);
+    }
 
     await Conversation.add(Object.assign({}, new ConversationModel(members)));
 
-    const memberSnapshot = await User.where('id', '==', memberId).get();
+    const memberSnapshot = await User.where("id", "==", memberId).get();
     const member = await memberSnapshot.docs[0].data();
-
 
     return res.status(200).json(member);
   } catch (err) {
@@ -58,9 +59,9 @@ export const getUserConversations = async (
       const [memberId] = conversation.members.filter((member: string) => {
         return member !== userId;
       });
-    
+
       userIds.push(memberId);
-    };
+    }
 
     const participants: any[] = [];
 
