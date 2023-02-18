@@ -43,13 +43,14 @@ io.on("connection", (socket: Socket) => {
         io.emit("getUsers", users);
     });
 
-    socket.on("sendMessage", ({senderId, receiverId, text, id}) => {
+    socket.on("sendMessage", ({senderId, receiverId, text, id, tag}) => {
         console.log(id);
         const user = getUser(receiverId);
         io.to(user!.socketId).emit("getMessage", {
             messageId: id,
             senderId,
             text,
+            tag,
         })
     });
 

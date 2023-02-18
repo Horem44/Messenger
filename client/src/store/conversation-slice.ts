@@ -27,7 +27,7 @@ const conversationSlice = createSlice({
     },
     setCurrentConversation: (state, action) => {
         state.currentConversation = action.payload;
-    }
+    },
   },
 });
 

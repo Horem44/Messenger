@@ -10,12 +10,17 @@ import CircularProgress from "@mui/material/CircularProgress";
 import { io } from "socket.io-client";
 import { currentUser } from "../../store/auth-slice";
 import { messageActions } from "../../store/message-slice";
+import {
+  Conversation,
+  conversationActions,
+} from "../../store/conversation-slice";
 
 interface ArrivalMessage {
   id: string;
   senderId: string;
   text: string;
   createdAt: string;
+  senderTag: string;
 }
 
 interface UpdatedMessage {
@@ -72,15 +77,21 @@ const Messenger = () => {
     (state) => state.conversation.currentConversation
   );
 
+  const conversation = useSelector<RootState, Conversation[]>(
+    (state) => state.conversation.conversation
+  );
+
   useEffect(() => {
     socket.current = io("ws://localhost:8900");
 
     socket.current.on("getMessage", (data: any) => {
+      console.log(data);
       setArrivalMessage({
         id: data.messageId,
         senderId: data.senderId,
         text: data.text,
         createdAt: getTime(),
+        senderTag: data.tag,
       });
     });
   }, []);
@@ -104,9 +115,23 @@ const Messenger = () => {
         senderId: data.senderId,
       });
     });
-  }, [])
+  }, []);
 
   useEffect(() => {
+    if (
+      arrivalMessage &&
+      !conversation.find(
+        (conversation) => conversation.tag === arrivalMessage.senderTag
+      )
+    ) {
+      dispatch(
+        conversationActions.addConversation({
+          id: arrivalMessage.senderId,
+          tag: arrivalMessage.senderTag,
+        })
+      );
+    }
+
     arrivalMessage &&
       currentConversation === arrivalMessage.senderId &&
       setMessages((prev: any) => [...prev, arrivalMessage]);
@@ -117,7 +142,7 @@ const Messenger = () => {
       const updatedMessageIndex = messages.findIndex(
         (message: any) => message.id === updatedMessage.id
       );
-        console.log(messages);
+      console.log(messages);
       if (updatedMessageIndex !== -1) {
         const newMessages = [...messages];
         newMessages[updatedMessageIndex].text = updatedMessage.text;
@@ -208,6 +233,7 @@ const Messenger = () => {
       senderId: currentUser.id,
       receiverId: currentConversation,
       text: message,
+      tag: currentUser.tag,
     });
 
     setMessages([...messages, newMessage]);
@@ -242,7 +268,7 @@ const Messenger = () => {
     const updatedMessageIndex = messages.findIndex(
       (message: any) => message.id === messageToUpdateId
     );
-      
+
     if (updatedMessageIndex !== -1) {
       const newMessages = [...messages];
       newMessages[updatedMessageIndex].text = message;
@@ -254,7 +280,7 @@ const Messenger = () => {
   const deleteMessageHandler = async (messageId: string) => {
     const url = "http://localhost:8080/message/" + messageId;
     const res = await fetch(url, {
-      method: 'delete',
+      method: "delete",
       credentials: "include",
     });
 
@@ -269,7 +295,7 @@ const Messenger = () => {
     });
 
     setMessages(newMessages);
-  }
+  };
 
   return (
     <Box sx={{ display: "flex" }}>
