@@ -49,6 +49,7 @@ export const getUserConversations = async (
       "array-contains",
       userId
     ).get();
+    
     const conversations = snapshot.docs.map((doc) => {
       return doc.data();
     });
