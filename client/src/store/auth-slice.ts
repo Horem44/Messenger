@@ -34,6 +34,17 @@ const authSlice = createSlice({
   },
 });
 
+export const logoutRequest = () => {
+  return async (dispatch: any) => {
+      dispatch(authActions.logout());
+      try{
+          await fetch('http://localhost:8080/user/logout', {credentials: 'include'})
+      }catch (err){
+          console.log(err);
+      }
+  }
+}
+
 export const authActions = authSlice.actions;
 
 export default authSlice;

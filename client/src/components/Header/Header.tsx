@@ -8,14 +8,21 @@ import AccountCircle from "@mui/icons-material/AccountCircle";
 import MenuItem from "@mui/material/MenuItem";
 import Menu from "@mui/material/Menu";
 import FriendSearchBar from "../FriendSearchBar/FriendSearchBar";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store";
 import { Link } from "react-router-dom";
 import classes from "./Header.module.css";
+import { logoutRequest } from "../../store/auth-slice";
+import { AnyAction } from "@reduxjs/toolkit";
 
 const Header = () => {
   const isAuth = useSelector<RootState, boolean>((state) => state.auth.isAuth);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const dispatch = useDispatch();
+  
+  const logoutHandler = () => {
+    dispatch(logoutRequest() as unknown as AnyAction);
+  };
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -78,6 +85,7 @@ const Header = () => {
                     to="login"
                     className={classes.header_link}
                     style={{ marginBottom: 0 }}
+                    onClick={logoutHandler}
                   >
                     Logout
                   </Link>

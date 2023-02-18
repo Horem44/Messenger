@@ -7,6 +7,8 @@ import Login from "./pages/Login/Login";
 import Messenger from "./pages/Messenger/Messenger";
 import Register from "./pages/Register/Register";
 import { authActions } from "./store/auth-slice";
+import {ToastContainer} from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
   const dispatch = useDispatch();
@@ -16,38 +18,56 @@ function App() {
     const getAuthentication = async () => {
       const url = "http://localhost:8080/auth/";
       const res = await fetch(url, {
-        credentials: 'include',
+        credentials: "include",
       });
 
-      if(res.status === 401){
-        console.log('No auth');
-        navigate('login');
+      if (res.status === 401) {
+        console.log("No auth");
+        navigate("login");
         return;
       }
 
       const currentUser = await res.json();
 
       dispatch(authActions.login());
-      dispatch(authActions.setCurrentUser({
-        id: currentUser.userId,
-        tag: currentUser.tag,
-      }));
+      dispatch(
+        authActions.setCurrentUser({
+          id: currentUser.userId,
+          tag: currentUser.tag,
+        })
+      );
 
-      navigate('messenger');
+      navigate("messenger");
     };
 
     getAuthentication();
-  }, [dispatch, navigate])
+  }, []);
 
   return (
-    <div className="App">
-      <Header />
-      <Routes>
-        <Route path="login" element={<Login />} />
-        <Route path="register" element={<Register />} />
-        <Route path="messenger" element={<Messenger />} />
-      </Routes>
-    </div>
+    <>
+      <div className="App">
+        <Header />
+        <Routes>
+          <Route path="login" element={<Login />} />
+          <Route path="register" element={<Register />} />
+          <Route path="messenger" element={<Messenger />} />
+          <Route path="*" element={<Messenger />} />
+        </Routes>
+      </div>
+      <ToastContainer
+        position="top-right"
+        autoClose={2000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
+      <ToastContainer />
+    </>
   );
 }
 

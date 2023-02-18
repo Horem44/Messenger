@@ -41,6 +41,10 @@ export const sendMessage = async (
   next: NextFunction
 ) => {
   try {
+    if(!req.body.auth){
+      return res.status(401).end();
+    }
+
     const userId = req.body.auth.userId;
     const memberId = req.body.id;
     const text = req.body.text;
@@ -77,6 +81,10 @@ export const getMessages = async (
   next: NextFunction
 ) => {
   try {
+    if(!req.body.auth){
+      return res.status(401).end();
+    }
+
     const userId = req.body.auth.userId;
     const memberId = req.params.id;
 
@@ -117,6 +125,10 @@ export const updateMessage = async (
   next: NextFunction
 ) => {
   try {
+    if(!req.body.auth){
+      return res.status(401).end();
+    }
+
     const messageId = req.body.messageId;
     const newText = req.body.text;
 
@@ -138,6 +150,10 @@ export const deleteMessage = async (
   next: NextFunction
 ) => {
   try {
+    if(!req.body.auth){
+      return res.status(401).end();
+    }
+    
     const messageId = req.params.id;
     console.log(messageId);
     const snapshot = await Message.where("id", "==", messageId).get();

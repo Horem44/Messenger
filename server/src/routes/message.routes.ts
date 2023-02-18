@@ -6,5 +6,5 @@ export const messageRoutes = express.Router();
 
 messageRoutes.post('/send', auth, sendMessage);
 messageRoutes.get('/:id', auth, getMessages);
-messageRoutes.post('/update', updateMessage);
-messageRoutes.delete('/:id', deleteMessage);
+messageRoutes.post('/update', auth, updateMessage);
+messageRoutes.delete('/:id', auth, deleteMessage);

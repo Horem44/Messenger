@@ -36,7 +36,7 @@ export const registerUser = async (
     );
 
     res.cookie("token", token, {
-      secure: true,
+      secure: false,
       httpOnly: true,
       maxAge: 3600000,
     });
@@ -83,7 +83,7 @@ export const loginUser = async (
     );
 
     res.cookie("token", token, {
-      secure: true,
+      secure: false,
       httpOnly: true,
       maxAge: 3600000,
     });
@@ -102,6 +102,11 @@ export const getAllUsers = async (
   next: NextFunction
 ) => {
   try {
+ 
+    if(!req.body.auth){
+      return res.status(401).end();
+    }
+
     const snapshot = await User.get();
     const userId = req.body.auth.userId;
 
@@ -121,3 +126,14 @@ export const getAllUsers = async (
     next(err);
   }
 };
+
+export const logoutUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  res.clearCookie('token');
+  return res.status(200).end();
+}
+
+

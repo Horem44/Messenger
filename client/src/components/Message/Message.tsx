@@ -90,14 +90,14 @@ const Message: React.FC<Props> = ({
             {files.map((file) => {
               if (allowedFileTypes.includes(file.type)) {
                 return (
-                  <a target="_blank" href={file.url} rel="noreferrer" className={classes.msg_img}>
+                  <a key={file.url} target="_blank" href={file.url} rel="noreferrer" className={classes.msg_img}>
                     <img src={file.url} alt="" />
                   </a>
                 );
               }
 
               return (
-                <a target="_blank" href={file.url} rel="noreferrer" className={classes.msg_file}>
+                <a key={file.url}  target="_blank" href={file.url} rel="noreferrer" className={classes.msg_file}>
                   <InsertDriveFileIcon />
                   {file.name}
                 </a>

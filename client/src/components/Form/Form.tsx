@@ -5,6 +5,7 @@ import AlternateEmailIcon from "@mui/icons-material/AlternateEmail";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { authActions } from "../../store/auth-slice";
+import { showErrorNotification, showSuccessNotification } from "../../util/notifications";
 
 const tagRegExp = /^[a-z0-9]+$/i;
 
@@ -118,9 +119,12 @@ const Form: React.FC<Props> = ({ type }: Props) => {
       
       dispatchAuth(authActions.setCurrentUser(user));
       dispatchAuth(authActions.login());
+      showSuccessNotification("Successfuly " + type);
       navigate("/messenger");
     } catch (err) {
-      console.log(err);
+      if(err instanceof Error){
+        showErrorNotification(err.message);
+      }
     }
   };
 

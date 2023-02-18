@@ -7,6 +7,7 @@ import express from "express";
 import multer, { Multer } from "multer";
 import { userRoutes, conversationRoutes, messageRoutes, authRoutes } from "./routes";
 import {errorHandler} from "./middleware";
+import { networkInterfaces } from 'os';
 
 const app = express();
 

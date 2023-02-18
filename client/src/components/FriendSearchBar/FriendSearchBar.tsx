@@ -6,6 +6,9 @@ import { CircularProgress } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import { Conversation, conversationActions } from "../../store/conversation-slice";
 import { RootState } from "../../store";
+import { showErrorNotification } from "../../util/notifications";
+import { useNavigate } from "react-router-dom";
+import { authActions } from "../../store/auth-slice";
 
 interface User {
   tag: string;
@@ -16,6 +19,7 @@ const FriendSearchBar = () => {
   const [open, setOpen] = useState<boolean>(false);
   const [users, setUsers] = useState<User[]>([]);
   const loading = open && users.length === 0;
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const conversations = useSelector<RootState, Conversation[]>(
     (state) => state.conversation.conversation
@@ -36,6 +40,13 @@ const FriendSearchBar = () => {
           credentials: "include",
         });
 
+        if(res.status === 401){
+          showErrorNotification('Unauthorized, please login!');
+          navigate('login');
+          dispatch(authActions.logout());
+          return;
+        }
+
         if(res.status !== 200){
           const error = await res.json();
           throw new Error(error.message);
@@ -47,7 +58,9 @@ const FriendSearchBar = () => {
           setUsers(users);
         }
       } catch (err) {
-        console.log(err);
+        if(err instanceof Error){
+          showErrorNotification(err.message);
+        }
       }
     };
 
@@ -75,6 +88,13 @@ const FriendSearchBar = () => {
         body: JSON.stringify({ id }),
       });
 
+      if(res.status === 401){
+        showErrorNotification('Unauthorized, please login!');
+        navigate('login');
+        dispatch(authActions.logout());
+        return;
+      }
+
       if (res.status !== 200) {
         const error = await res.json();
         throw new Error(error.message);
@@ -83,7 +103,9 @@ const FriendSearchBar = () => {
       const member = await res.json();
       dispatch(conversationActions.addConversation(member));
     } catch (err) {
-      console.log(err);
+      if(err instanceof Error){
+        showErrorNotification(err.message);
+      }
     }
   };
 

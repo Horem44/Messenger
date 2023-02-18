@@ -6,7 +6,11 @@ const getTime = () => {
   const date = new Date();
   const seconds =
     date.getSeconds() < 10 ? "0" + date.getSeconds() : date.getSeconds();
-  return date.getHours() + ":" + date.getMinutes() + ":" + seconds;
+  const minutes =
+    date.getMinutes() < 10 ? "0" + date.getMinutes() : date.getMinutes();
+
+  return date.toTimeString().split(' ')[0];
+  return date.getHours() + ":" + minutes + ":" + seconds;
 };
 
 export class MessageModel {

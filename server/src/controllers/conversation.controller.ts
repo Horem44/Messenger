@@ -8,6 +8,10 @@ export const createConversation = async (
   next: NextFunction
 ) => {
   try {
+    if(!req.body.auth){
+      return res.status(401).end();
+    }
+    
     const memberId = req.body.id;
     const userId = req.body.auth.userId;
     const members = [userId, memberId].sort();
@@ -42,6 +46,10 @@ export const getUserConversations = async (
   next: NextFunction
 ) => {
   try {
+    if(!req.body.auth){
+      return res.status(401).end();
+    }
+
     const userId = req.body.auth.userId;
 
     const snapshot = await Conversation.where(

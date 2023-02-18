@@ -8,12 +8,14 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store";
 import CircularProgress from "@mui/material/CircularProgress";
 import { io } from "socket.io-client";
-import { currentUser } from "../../store/auth-slice";
+import { authActions, currentUser } from "../../store/auth-slice";
 import { messageActions } from "../../store/message-slice";
 import {
   Conversation,
   conversationActions,
 } from "../../store/conversation-slice";
+import { showErrorNotification } from "../../util/notifications";
+import { useNavigate } from "react-router-dom";
 
 interface ArrivalMessage {
   id: string;
@@ -21,7 +23,7 @@ interface ArrivalMessage {
   text: string;
   createdAt: string;
   senderTag: string;
-  files: {url: string, type: string; name: string};
+  files: { url: string; type: string; name: string };
 }
 
 interface UpdatedMessage {
@@ -38,17 +40,18 @@ interface DeletedMessage {
 
 const getTime = () => {
   const date = new Date();
-  const seconds =
-    date.getSeconds() < 10 ? "0" + date.getSeconds() : date.getSeconds();
-  return date.getHours() + ":" + date.getMinutes() + ":" + seconds;
+  return date.toTimeString().split(" ")[0];
 };
 
 const Messenger = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [messages, setMessages] = useState<any>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isMsgLoading, setIsMsgLoading] = useState<boolean>(false);
   const socket = useRef<any>();
   const dispatch = useDispatch();
+  const scrollRef = useRef<any>();
+  const navigate = useNavigate();
 
   const messageToUpdateId = useSelector<RootState, string>(
     (state) => state.message.messageToUpdateId
@@ -169,28 +172,41 @@ const Messenger = () => {
 
   useEffect(() => {
     const getMessages = async () => {
-      if (currentConversation === "") {
-        return;
+      try{
+        if (currentConversation === "") {
+          return;
+        }
+  
+        setIsLoading(true);
+  
+        const url = "http://localhost:8080/message/" + currentConversation;
+        const res = await fetch(url, {
+          credentials: "include",
+        });
+  
+        if(res.status === 401){
+          showErrorNotification('Unauthorized, please login!');
+          navigate('login');
+          dispatch(authActions.logout());
+          return;
+        }
+  
+        const messages = await res.json();
+  
+        setMessages(messages);
+        setIsLoading(false);
+      }catch(err){
+        if(err instanceof Error){
+          showErrorNotification(err.message);
+        }
       }
-
-      setIsLoading(true);
-
-      const url = "http://localhost:8080/message/" + currentConversation;
-      const res = await fetch(url, {
-        credentials: "include",
-      });
-
-      const messages = await res.json();
-
-      setMessages(messages);
-      setIsLoading(false);
     };
 
     getMessages();
   }, [currentConversation]);
 
   const setFileHandler = (file: File) => {
-    if(files.length === 5){
+    if (files.length === 5) {
       return;
     }
 
@@ -198,7 +214,7 @@ const Messenger = () => {
       return;
     }
 
-    setFiles(prev => [...prev, file]);
+    setFiles((prev) => [...prev, file]);
   };
 
   const deleteFileHandler = (file: File) => {
@@ -207,41 +223,58 @@ const Messenger = () => {
   };
 
   const sendMessageHandler = async (currentConversation: string) => {
-    if (message === "") {
+    if (!message.trim().length && !files.length) {
       return;
     }
 
     setFiles([]);
-    const url = "http://localhost:8080/message/send";
-    const formData = new FormData();
 
-    formData.append("id", currentConversation);
-    formData.append("text", message);
-
-    for (let i = 0; i < files.length; i++) {
-      formData.append("files", files[i]);
-    }
-
-    dispatch(messageActions.setMessage(""));
-
-    const res = await fetch(url, {
-      method: "post",
-      credentials: "include",
-      body: formData,
-    });
-
-    const newMessage = await res.json();
+    try{
+      const url = "http://localhost:8080/message/send";
+      const formData = new FormData();
   
-    socket.current.emit("sendMessage", {
-      id: newMessage.id,
-      senderId: currentUser.id,
-      receiverId: currentConversation,
-      text: message,
-      tag: currentUser.tag,
-      files: newMessage.files,
-    });
-
-    setMessages((prev: any) => [...prev, newMessage]);
+      formData.append("id", currentConversation);
+      formData.append("text", message);
+  
+      for (let i = 0; i < files.length; i++) {
+        formData.append("files", files[i]);
+      }
+  
+      dispatch(messageActions.setMessage(""));
+      setIsMsgLoading(true);
+  
+      const res = await fetch(url, {
+        method: "post",
+        credentials: "include",
+        body: formData,
+      });
+  
+      if(res.status === 401){
+        showErrorNotification('Unauthorized, please login!');
+        navigate('login');
+        dispatch(authActions.logout());
+        return;
+      }
+  
+      const newMessage = await res.json();
+  
+      socket.current.emit("sendMessage", {
+        id: newMessage.id,
+        senderId: currentUser.id,
+        receiverId: currentConversation,
+        text: message,
+        tag: currentUser.tag,
+        files: newMessage.files,
+      });
+  
+      setMessages((prev: any) => [...prev, newMessage]);
+      setIsMsgLoading(false);
+    }catch(err){
+      if(err instanceof Error){
+        showErrorNotification(err.message);
+      }
+    }
+    
   };
 
   const updateMessageHandler = async (messageId: string) => {
@@ -249,58 +282,94 @@ const Messenger = () => {
       return;
     }
 
-    const url = "http://localhost:8080/message/update";
+    try{
+      const url = "http://localhost:8080/message/update";
 
-    socket.current.emit("updateMessage", {
-      id: messageToUpdateId,
-      senderId: currentUser.id,
-      receiverId: currentConversation,
-      text: message,
-    });
-
-    const res = await fetch(url, {
-      method: "post",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify({
-        messageId,
+      socket.current.emit("updateMessage", {
+        id: messageToUpdateId,
+        senderId: currentUser.id,
+        receiverId: currentConversation,
         text: message,
-      }),
-    });
-
-    const updatedMessageIndex = messages.findIndex(
-      (message: any) => message.id === messageToUpdateId
-    );
-
-    if (updatedMessageIndex !== -1) {
-      const newMessages = [...messages];
-      newMessages[updatedMessageIndex].text = message;
-      setMessages(newMessages);
-      dispatch(messageActions.setMessage(""));
+      });
+  
+      const res = await fetch(url, {
+        method: "post",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          messageId,
+          text: message,
+        }),
+      });
+  
+      if(res.status === 401){
+        showErrorNotification('Unauthorized, please login!');
+        navigate('login');
+        dispatch(authActions.logout());
+        return;
+      }
+  
+      const updatedMessageIndex = messages.findIndex(
+        (message: any) => message.id === messageToUpdateId
+      );
+  
+      if (updatedMessageIndex !== -1) {
+        const newMessages = [...messages];
+        newMessages[updatedMessageIndex].text = message;
+        setMessages(newMessages);
+        dispatch(messageActions.setMessage(""));
+      }
+    }catch(err){
+      if(err instanceof Error){
+        showErrorNotification(err.message);
+      }
     }
+    
   };
 
   const deleteMessageHandler = async (messageId: string) => {
-    const url = "http://localhost:8080/message/" + messageId;
-    const res = await fetch(url, {
-      method: "delete",
-      credentials: "include",
-    });
-
-    socket.current.emit("deleteMessage", {
-      id: messageId,
-      senderId: currentUser.id,
-      receiverId: currentConversation,
-    });
-
-    const newMessages = messages.filter((message: any) => {
-      return message.id !== messageId;
-    });
-
-    setMessages(newMessages);
+    try{
+      const url = "http://localhost:8080/message/" + messageId;
+      const res = await fetch(url, {
+        method: "delete",
+        credentials: "include",
+      });
+  
+      if(res.status === 401){
+        showErrorNotification('Unauthorized, please login!');
+        navigate('login');
+        dispatch(authActions.logout());
+        return;
+      }
+  
+      socket.current.emit("deleteMessage", {
+        id: messageId,
+        senderId: currentUser.id,
+        receiverId: currentConversation,
+      });
+  
+      const newMessages = messages.filter((message: any) => {
+        return message.id !== messageId;
+      });
+  
+      setMessages(newMessages);
+    }catch(err){
+      if(err instanceof Error){
+        showErrorNotification(err.message);
+      }
+    }
+    
   };
+
+  useEffect(() => {
+    scrollRef.current.scrollTo({
+      top: scrollRef.current.scrollHeight,
+      left: 0,
+      behavior: "auto",
+    });
+  }, [messages.length]);
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -317,6 +386,7 @@ const Messenger = () => {
       >
         <div style={{ height: "50px" }}></div>
         <Box
+          ref={scrollRef}
           component="main"
           sx={{
             flexGrow: 1,
@@ -326,7 +396,7 @@ const Messenger = () => {
             flexDirection: "column",
             height: files.length !== 0 ? "60vh" : "calc(60vh + 90px)",
             overflowY: "scroll",
-            overflowX: 'hidden',
+            overflowX: "hidden",
           }}
         >
           {isLoading && <CircularProgress />}
@@ -351,6 +421,7 @@ const Messenger = () => {
           <FilePreview files={files} onDeleteFile={deleteFileHandler} />
         )}
         <MessageInput
+          isMsgLoading={isMsgLoading}
           onSetFile={setFileHandler}
           files={files}
           onSendMessage={sendMessageHandler}
