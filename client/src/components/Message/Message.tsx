@@ -6,6 +6,7 @@ import { messageActions } from "../../store/message-slice";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import classes from './Message.module.css';
 
+// todo you already have somewhere this types. move to consts
 const allowedFileTypes = ["image/png", "image/jpeg", "image/gif"];
 
 type Props = {
@@ -58,6 +59,7 @@ const Message: React.FC<Props> = ({
 
   const handleEdit = () => {
     setContextMenu(null);
+    // todo pass textContent from parrent component. use linkRef instead of getElemById
     const message = document.getElementById(id)?.textContent;
     dispatch(messageActions.edit({ message, id }));
   };

@@ -23,6 +23,7 @@ const initialValidationState: validationState = {
   isTagValid: true,
 };
 
+// todo formValidationService
 interface action {
   type:
     | "PASSWORD_IS_NOT_VALID"
@@ -31,6 +32,7 @@ interface action {
     | "TAG_IS_VALID";
 }
 
+// todo to formValidationService
 const validationReducer = (state: validationState, action: action) => {
   switch (action.type) {
     case "PASSWORD_IS_VALID":
@@ -47,6 +49,7 @@ const validationReducer = (state: validationState, action: action) => {
   }
 };
 
+// todo rename to proper name
 const Form: React.FC<Props> = ({ type }: Props) => {
   const dispatchAuth = useDispatch();
   const navigate = useNavigate();
@@ -58,6 +61,7 @@ const Form: React.FC<Props> = ({ type }: Props) => {
   const tagInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
+  // todo to formValidationService
   const isFormValid = (password: string, tag: string | undefined) => {
     if (password.trim().length === 0 || password.length < 6) {
       dispatch({ type: "PASSWORD_IS_NOT_VALID" });
@@ -92,14 +96,17 @@ const Form: React.FC<Props> = ({ type }: Props) => {
 
     const path = type === "login" ? "login" : "register";
 
+    // todo consts
     const url = "http://localhost:8080/user/" + path;
 
+    // todo use classes
     const userData = {
       tag,
       password,
     };
 
     try {
+      // todo move to userService that extends apiService
       const res = await fetch(url, {
         method: "post",
         headers: {
@@ -111,6 +118,7 @@ const Form: React.FC<Props> = ({ type }: Props) => {
 
       if (res.status !== 200) {
         const error = await res.json();
+
         console.log(error);
         throw new Error(error.message);
       }
@@ -120,6 +128,7 @@ const Form: React.FC<Props> = ({ type }: Props) => {
       dispatchAuth(authActions.setCurrentUser(user));
       dispatchAuth(authActions.login());
       showSuccessNotification("Successfuly " + type);
+      // todo move string to consts
       navigate("/messenger");
     } catch (err) {
       if(err instanceof Error){
@@ -128,6 +137,7 @@ const Form: React.FC<Props> = ({ type }: Props) => {
     }
   };
 
+  // todo try to move all template logic to separate file e.g. Form.html.
   return (
     <Box
       sx={{

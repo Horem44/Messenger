@@ -35,7 +35,9 @@ const FriendSearchBar = () => {
 
     const getAllUsers = async () => {
       try {
+        // todo use consts
         const url = "http://localhost:8080/user/all";
+        // todo use userService with apiClient
         const res = await fetch(url, {
           credentials: "include",
         });
@@ -77,8 +79,10 @@ const FriendSearchBar = () => {
     }
 
     try {
+      // todo consts
       const url = "http://localhost:8080/conversation/new";
 
+      // todo conversationService with apiClient
       const res = await fetch(url, {
         method: "post",
         headers: {

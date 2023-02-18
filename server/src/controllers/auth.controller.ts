@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 
+// todo move each controller to separate folder
 export const getAuthenticationStatus = async (
   req: Request,
   res: Response,

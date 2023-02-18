@@ -33,6 +33,7 @@ const Sidebar = () => {
     const getConverstions = async () => {
       setIsLoading(true);
       try {
+        // todo conversationService
         const url = "http://localhost:8080/conversation/all";
         const res = await fetch(url, {
           credentials: "include",

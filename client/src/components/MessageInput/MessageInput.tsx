@@ -21,6 +21,7 @@ interface Props {
 
 const MessageInput: React.FC<Props> = ({
   onSetFile,
+  // todo remove
   files,
   onSendMessage,
   onUpdateMessage,

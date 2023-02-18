@@ -17,6 +17,7 @@ import {
 import { showErrorNotification } from "../../util/notifications";
 import { useNavigate } from "react-router-dom";
 
+// todo models
 interface ArrivalMessage {
   id: string;
   senderId: string;
@@ -38,6 +39,7 @@ interface DeletedMessage {
   senderId: string;
 }
 
+// todo dateService
 const getTime = () => {
   const date = new Date();
   return date.toTimeString().split(" ")[0];
@@ -85,6 +87,7 @@ const Messenger = () => {
     (state) => state.conversation.conversation
   );
 
+  // todo move socket startup configs
   useEffect(() => {
     socket.current = io("ws://localhost:8900");
 
@@ -118,6 +121,7 @@ const Messenger = () => {
     });
   }, []);
 
+  // todo move to custom hooks
   useEffect(() => {
     if (
       arrivalMessage &&
@@ -138,6 +142,7 @@ const Messenger = () => {
       setMessages((prev: any) => [...prev, arrivalMessage]);
   }, [arrivalMessage, currentConversation]);
 
+  // todo custom hooks
   useEffect(() => {
     if (updatedMessage && currentConversation === updatedMessage.senderId) {
       const updatedMessageIndex = messages.findIndex(
@@ -163,6 +168,7 @@ const Messenger = () => {
     }
   }, [deletedMessage, currentConversation]);
 
+  // todo custom hooks
   useEffect(() => {
     socket.current.emit("addUser", currentUser.id);
     socket.current.on("getUsers", (users: currentUser) => {
@@ -179,6 +185,7 @@ const Messenger = () => {
   
         setIsLoading(true);
   
+        // todo messageService
         const url = "http://localhost:8080/message/" + currentConversation;
         const res = await fetch(url, {
           credentials: "include",
@@ -217,10 +224,7 @@ const Messenger = () => {
     setFiles((prev) => [...prev, file]);
   };
 
-  const deleteFileHandler = (file: File) => {
-    const newFiles = files.filter((f) => f.name !== file.name);
-    setFiles(newFiles);
-  };
+  const deleteFileHandler = (file: File) => setFiles(files.filter((f) => f.name !== file.name));
 
   const sendMessageHandler = async (currentConversation: string) => {
     if (!message.trim().length && !files.length) {
@@ -231,6 +235,7 @@ const Messenger = () => {
 
     try{
       const url = "http://localhost:8080/message/send";
+      // todo move to MessangerService
       const formData = new FormData();
   
       formData.append("id", currentConversation);
@@ -243,6 +248,7 @@ const Messenger = () => {
       dispatch(messageActions.setMessage(""));
       setIsMsgLoading(true);
   
+      // todo messageService
       const res = await fetch(url, {
         method: "post",
         credentials: "include",
@@ -258,6 +264,7 @@ const Messenger = () => {
   
       const newMessage = await res.json();
   
+      // todo move to separate fuck shit that would emit this
       socket.current.emit("sendMessage", {
         id: newMessage.id,
         senderId: currentUser.id,
@@ -285,6 +292,7 @@ const Messenger = () => {
     try{
       const url = "http://localhost:8080/message/update";
 
+      // todo move to separate service
       socket.current.emit("updateMessage", {
         id: messageToUpdateId,
         senderId: currentUser.id,
@@ -292,6 +300,7 @@ const Messenger = () => {
         text: message,
       });
   
+      // todo messageService
       const res = await fetch(url, {
         method: "post",
         headers: {
@@ -308,6 +317,7 @@ const Messenger = () => {
         showErrorNotification('Unauthorized, please login!');
         navigate('login');
         dispatch(authActions.logout());
+
         return;
       }
   
@@ -317,12 +327,14 @@ const Messenger = () => {
   
       if (updatedMessageIndex !== -1) {
         const newMessages = [...messages];
+
         newMessages[updatedMessageIndex].text = message;
+
         setMessages(newMessages);
         dispatch(messageActions.setMessage(""));
       }
-    }catch(err){
-      if(err instanceof Error){
+    } catch(err) {
+      if (err instanceof Error) {
         showErrorNotification(err.message);
       }
     }
@@ -332,6 +344,8 @@ const Messenger = () => {
   const deleteMessageHandler = async (messageId: string) => {
     try{
       const url = "http://localhost:8080/message/" + messageId;
+      
+      // todo messageService
       const res = await fetch(url, {
         method: "delete",
         credentials: "include",
@@ -344,6 +358,7 @@ const Messenger = () => {
         return;
       }
   
+      // todo socketservice
       socket.current.emit("deleteMessage", {
         id: messageId,
         senderId: currentUser.id,
@@ -355,14 +370,14 @@ const Messenger = () => {
       });
   
       setMessages(newMessages);
-    }catch(err){
+    } catch(err) {
       if(err instanceof Error){
         showErrorNotification(err.message);
       }
     }
-    
   };
 
+  // todo custom hook
   useEffect(() => {
     scrollRef.current.scrollTo({
       top: scrollRef.current.scrollHeight,

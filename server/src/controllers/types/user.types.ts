@@ -1,3 +1,4 @@
+// todo move to models
 export interface registerUserBody extends Express.Request {
   body: {
     tag: string;
