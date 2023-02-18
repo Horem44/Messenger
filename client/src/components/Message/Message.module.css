@@ -1,0 +1,26 @@
+.msg_img {
+    width: 80px;
+    height: 80px;
+    margin: 0.5rem;
+}
+
+.msg_img img{
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
+    
+}
+
+.msg_file {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    flex-direction: column;
+    font-size: 0.7rem;
+    margin: 0.5rem;
+}
+
+.msg_file svg{
+    width: 80px;
+    height: 80px;
+}

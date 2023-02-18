@@ -21,6 +21,7 @@ interface ArrivalMessage {
   text: string;
   createdAt: string;
   senderTag: string;
+  files: {url: string, type: string; name: string};
 }
 
 interface UpdatedMessage {
@@ -92,11 +93,10 @@ const Messenger = () => {
         text: data.text,
         createdAt: getTime(),
         senderTag: data.tag,
+        files: data.files,
       });
     });
-  }, []);
 
-  useEffect(() => {
     socket.current.on("getUpdatedMessage", (data: any) => {
       setUpdatedMessage({
         id: data.messageId,
@@ -105,9 +105,7 @@ const Messenger = () => {
         createdAt: getTime(),
       });
     });
-  }, []);
 
-  useEffect(() => {
     socket.current.on("onDeleteMessage", (data: any) => {
       console.log(data);
       setDeletedMessage({
@@ -192,13 +190,15 @@ const Messenger = () => {
   }, [currentConversation]);
 
   const setFileHandler = (file: File) => {
+    if(files.length === 5){
+      return;
+    }
+
     if (files.find((f) => f.name === file.name)) {
       return;
     }
 
-    const newFiles = [...files];
-    newFiles.push(file);
-    setFiles(newFiles);
+    setFiles(prev => [...prev, file]);
   };
 
   const deleteFileHandler = (file: File) => {
@@ -211,11 +211,16 @@ const Messenger = () => {
       return;
     }
 
+    setFiles([]);
     const url = "http://localhost:8080/message/send";
     const formData = new FormData();
 
     formData.append("id", currentConversation);
     formData.append("text", message);
+
+    for (let i = 0; i < files.length; i++) {
+      formData.append("files", files[i]);
+    }
 
     dispatch(messageActions.setMessage(""));
 
@@ -226,17 +231,17 @@ const Messenger = () => {
     });
 
     const newMessage = await res.json();
-    console.log(newMessage.id);
-
+  
     socket.current.emit("sendMessage", {
       id: newMessage.id,
       senderId: currentUser.id,
       receiverId: currentConversation,
       text: message,
       tag: currentUser.tag,
+      files: newMessage.files,
     });
 
-    setMessages([...messages, newMessage]);
+    setMessages((prev: any) => [...prev, newMessage]);
   };
 
   const updateMessageHandler = async (messageId: string) => {
@@ -321,6 +326,7 @@ const Messenger = () => {
             flexDirection: "column",
             height: files.length !== 0 ? "60vh" : "calc(60vh + 90px)",
             overflowY: "scroll",
+            overflowX: 'hidden',
           }}
         >
           {isLoading && <CircularProgress />}
@@ -335,6 +341,7 @@ const Messenger = () => {
                   type={type}
                   text={message.text}
                   createdAt={message.createdAt}
+                  files={message.files}
                   onDeleteMessage={deleteMessageHandler}
                 />
               );

@@ -14,14 +14,14 @@ export class MessageModel {
   conversationId: string;
   senderId: string;
   text: string;
-  files: string[];
+  files: { url: string; type: string; name: string }[];
   createdAt: string;
 
   constructor(
     conversationId: string,
     senderId: string,
     text: string,
-    files: string[],
+    files: { url: string; type: string; name: string }[]
   ) {
     this.conversationId = conversationId;
     this.senderId = senderId;
