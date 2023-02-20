@@ -5,6 +5,7 @@ import ClearIcon from "@mui/icons-material/Clear";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store";
 import { messageActions } from "../../store/message-slice";
+import classes from "./FileInput.module.css";
 
 type Props = {
   onSetFile: (file: File) => void;
@@ -13,7 +14,6 @@ type Props = {
 const FileInput: React.FC<Props> = ({ onSetFile }) => {
   const dispatch = useDispatch();
   const setFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log(e.target.files);
     onSetFile(e.target.files![0]);
   };
 
@@ -28,11 +28,11 @@ const FileInput: React.FC<Props> = ({ onSetFile }) => {
   return (
     <>
       {!isEditing && (
-        <label htmlFor="upload-photo">
+        <label htmlFor="upload-file">
           <input
-            style={{ display: "none" }}
-            id="upload-photo"
-            name="upload-photo"
+            className={classes.file_input}
+            id="upload-file"
+            name="upload-file"
             type="file"
             onChange={setFile}
           />

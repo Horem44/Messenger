@@ -4,11 +4,19 @@ import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
 import { CircularProgress } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
-import { Conversation, conversationActions } from "../../store/conversation-slice";
+import {
+  Conversation,
+  conversationActions,
+} from "../../store/conversation-slice";
 import { RootState } from "../../store";
 import { showErrorNotification } from "../../util/notifications";
 import { useNavigate } from "react-router-dom";
 import { authActions } from "../../store/auth-slice";
+import { UserService } from "../../services/user.service";
+import { ConversationService } from "../../services/conversation.service";
+
+const userService = new UserService();
+const conversationService = new ConversationService();
 
 interface User {
   tag: string;
@@ -25,77 +33,56 @@ const FriendSearchBar = () => {
     (state) => state.conversation.conversation
   );
 
+  const getAllUsers = async () => {
+    try {
+      const res = await userService.getAll();
+
+      if (res.status === 401) {
+        showErrorNotification("Unauthorized, please login!");
+        navigate("login");
+        dispatch(authActions.logout());
+
+        return;
+      }
+
+      if (res.status !== 200) {
+        const error = await res.json();
+        throw new Error(error.message);
+      }
+
+      const users = await res.json();
+
+      setUsers(users);
+    } catch (err) {
+      if (err instanceof Error) {
+        showErrorNotification(err.message);
+      }
+    }
+  };
 
   useEffect(() => {
-    let active = true;
-
     if (!loading) {
       return undefined;
     }
 
-    const getAllUsers = async () => {
-      try {
-        // todo use consts
-        const url = "http://localhost:8080/user/all";
-        // todo use userService with apiClient
-        const res = await fetch(url, {
-          credentials: "include",
-        });
-
-        if(res.status === 401){
-          showErrorNotification('Unauthorized, please login!');
-          navigate('login');
-          dispatch(authActions.logout());
-          return;
-        }
-
-        if(res.status !== 200){
-          const error = await res.json();
-          throw new Error(error.message);
-        }
-
-        const users = await res.json();
-
-        if (active) {
-          setUsers(users);
-        }
-      } catch (err) {
-        if(err instanceof Error){
-          showErrorNotification(err.message);
-        }
-      }
-    };
-
     getAllUsers();
-
-    return () => {
-      active = false;
-    };
   }, [loading]);
 
   const createConversationHandler = async (id: string) => {
-    if(conversations.find((conversation: Conversation) => conversation.id === id)){
+    if (
+      conversations.find((conversation: Conversation) => conversation.id === id)
+    ) {
       return;
     }
 
     try {
-      // todo consts
-      const url = "http://localhost:8080/conversation/new";
+      const res = await conversationService.create(id);
 
-      // todo conversationService with apiClient
-      const res = await fetch(url, {
-        method: "post",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ id }),
-      });
-
-      if(res.status === 401){
-        showErrorNotification('Unauthorized, please login!');
-        navigate('login');
+      if (res.status === 401) {
+        showErrorNotification("Unauthorized, please login!");
+        navigate("login");
         dispatch(authActions.logout());
+
         return;
       }
 
@@ -107,7 +94,7 @@ const FriendSearchBar = () => {
       const member = await res.json();
       dispatch(conversationActions.addConversation(member));
     } catch (err) {
-      if(err instanceof Error){
+      if (err instanceof Error) {
         showErrorNotification(err.message);
       }
     }

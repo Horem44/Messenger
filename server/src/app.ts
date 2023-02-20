@@ -4,10 +4,9 @@ import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
-import multer, { Multer } from "multer";
+import multer from "multer";
 import { userRoutes, conversationRoutes, messageRoutes, authRoutes } from "./routes";
 import {errorHandler} from "./middleware";
-import { networkInterfaces } from 'os';
 
 const app = express();
 
@@ -28,8 +27,11 @@ app.use(cookieParser());
 app.use(multer({ storage: multer.memoryStorage() }).array('files', 5));
 
 app.use('/user', userRoutes);
+
 app.use('/conversation', conversationRoutes);
+
 app.use('/message', messageRoutes);
+
 app.use('/auth', authRoutes);
 
 app.use(errorHandler);

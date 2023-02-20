@@ -1,116 +1,80 @@
-// todo check unused imports in all filess
-import { Request, Response, NextFunction } from "express";
-import { Conversation, ConversationModel, User, UserModel } from "../models";
-import { conversationBody as conversationBody } from "./types";
+import { Response, NextFunction } from "express";
+import { UserDto } from "../dtos";
+import { ConversationService, UserService } from "../services";
+import { ConversationRequest as ConversationRequest } from "./types";
+import { Error } from "../models";
+
+const conversationService = new ConversationService();
+const userService = new UserService();
 
 export const createConversation = async (
-  req: conversationBody,
+  req: ConversationRequest,
   res: Response,
   next: NextFunction
 ) => {
-  // todo check ability to move try catch to middlewars. avoid using try catch in controllers
-  // todo create service (class) for all controllers and move logic from actions to services
   try {
-    if (!req.body.auth) {
-      return res.status(401).end();
-    }
-
     const memberId = req.body.id;
     const userId = req.body.auth.userId;
     const members = [userId, memberId].sort();
 
-    // todo rename all queryable data with "where" usage to plural
-    const existingConversation = await Conversation.where(
-      "members",
-      "==",
+    const existingConversation = await conversationService.getByMembersAsync(
       members
-    ).get();
+    );
 
-    if (!existingConversation.empty) {
-      // todo move two rows below above of if statement. remove duplicate below if  statement
-      // todo move to userService. add cast for query result to specific type
-      const memberSnapshot = await User.where("id", "==", memberId).get();
-      const member = await memberSnapshot.docs[0].data();
-      return res.status(200).json(member);
+    const member = await userService.getByMemberIdAsync(memberId);
+
+    if (!member) {
+      throw new Error("Create conversation error! No such user!");
     }
 
-    // todo conversationService
-    await Conversation.add(Object.assign({}, new ConversationModel(members)));
+    const userDto: UserDto = new UserDto(member.tag, member.id);
 
-    // todo userService
-    const memberSnapshot = await User.where("id", "==", memberId).get();
-    const member = await memberSnapshot.docs[0].data();
+    if (existingConversation) {
+      return res.status(200).json(userDto);
+    }
 
-    // todo return on front new UserDto().name = member.name;
-    // todo do this approach among all project
-    return res.status(200).json(member);
+    await conversationService.addAsync(members);
+
+    return res.status(200).json(userDto);
   } catch (err) {
-    // todo check for all console.logs in project and remove them
-    console.log(err);
     next(err);
   }
 };
 
 export const getUserConversations = async (
-  req: conversationBody,
+  req: ConversationRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    // move all checks if auth to middlewares
-    if(!req.body.auth){
-      return res.status(401).end();
+    const conversations = await conversationService.getAllByUserIdAsync(req.body.auth.userId);
+
+    if (!conversations) {
+      return res.status(200).json([]);
     }
 
-    // todo rename vars to be more specific
-    const userId = req.body.auth.userId;
+    const participantIds: string[] = [];
 
-    // todo rename to conversationsSnapshot in plural
-    // todo conversationService
-    const snapshot = await Conversation.where(
-      // todo move all parameters from queryable wheres to consts and use
-      "members",
-      "array-contains",
-      userId
-    ).get();
-    
-    // todo remove return
-    // todo add type for conversations
-    const conversations = snapshot.docs.map((doc) => {
-      return doc.data();
-    });
-
-    // todo create specific names for this file's vars
-    const userIds: string[] = [];
-
-    // todo refactor to use map filter etc...
     for (let conversation of conversations) {
-      // todo avoid using return
-      const [memberId] = conversation.members.filter((member: string) => {
-        return member !== userId;
-      });
+      const [memberId] = conversation.members.filter(
+        (member: string) => member !== req.body.auth.userId
+      );
 
-      userIds.push(memberId);
+      participantIds.push(memberId);
     }
 
-    // todo use types
-    const participants: any[] = [];
+    const users = await userService.getAllByIdsAsync(participantIds);
 
-    // todo instead of let use const
-    for (let id of userIds) {
-      // todo rename snapshot. plural
-      // todo userService
-      const snapshot = await User.where("id", "==", id).get();
-      // todo rename data to user
-      const data = await snapshot.docs[0].data();
-      delete data.hash;
-      // todo use creating movel from class. new User().name = 'name'
-      participants.push(data);
+    if (!users) {
+      throw new Error("No users!");
     }
 
-    return res.status(200).json(participants);
+    const userDtos: UserDto[] = users.map(
+      (user) => new UserDto(user.tag, user.id)
+    );
+
+    return res.status(200).json(userDtos);
   } catch (err) {
-    console.log(err);
     next(err);
   }
 };

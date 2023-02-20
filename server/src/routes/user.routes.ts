@@ -4,10 +4,10 @@ import { auth } from "../middleware";
 
 export const userRoutes = express.Router();
 
-userRoutes.post('/register', registerUser);
+userRoutes.post('/register', <any>registerUser);
 
-userRoutes.post('/login', loginUser);
+userRoutes.post('/login', <any>loginUser);
 
-userRoutes.get('/all', auth, getAllUsers);
+userRoutes.get('/all', auth, <any>getAllUsers);
 
-userRoutes.get('/logout', auth, logoutUser);
+userRoutes.get('/logout', auth, <any>logoutUser);

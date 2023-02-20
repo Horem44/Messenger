@@ -1,13 +1,14 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { showErrorNotification } from "../util/notifications";
 
-export interface currentUser {
+export interface ICurrentUser {
   id: string;
   tag: string;
 }
 
 interface authSlice {
   isAuth: boolean;
-  currentUser: currentUser;
+  currentUser: ICurrentUser;
 }
 
 const initialAuthState: authSlice = {
@@ -38,9 +39,16 @@ export const logoutRequest = () => {
   return async (dispatch: any) => {
       dispatch(authActions.logout());
       try{
-          await fetch('http://localhost:8080/user/logout', {credentials: 'include'})
+          const res = await fetch('http://localhost:8080/user/logout', {credentials: 'include'});
+
+          if(res.status !== 200){
+            const error = await res.json();
+            throw new Error(error.message);
+          }
       }catch (err){
-          console.log(err);
+        if(err instanceof Error){
+          showErrorNotification(err.message);
+        }
       }
   }
 }

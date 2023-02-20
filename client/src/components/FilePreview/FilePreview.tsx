@@ -3,25 +3,17 @@ import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import { Box } from "@mui/material";
 import classes from "./FilePreview.module.css";
 import CloseIcon from "@mui/icons-material/Close";
+import { allowedFileTypes } from "../../constants/file.constants";
 
 type Props = {
   files: File[];
   onDeleteFile: (file: File) => void;
 };
 
-const allowedFileTypes = ["image/png", "image/jpeg", "image/gif"];
-
 const FilePreview: React.FC<Props> = ({ files, onDeleteFile }: Props) => {
   return (
     <Box
-      sx={{
-        height: "90px",
-        padding: "5px",
-        display: "flex",
-        alignItems: "center",
-        background: "transparent",
-        overflowY: "scroll",
-      }}
+    className={classes.preview_main_container}
     >
       {files.map((file) => {
         if (allowedFileTypes.includes(file.type)) {

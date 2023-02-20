@@ -32,7 +32,6 @@ const Header = () => {
     setAnchorEl(null);
   };
 
-  // todo move all css properties to module.css in all files
   return (
     <Box
       sx={{ flexGrow: 1 }}

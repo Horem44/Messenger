@@ -1,192 +1,108 @@
-import { Request, Response, NextFunction } from "express";
+import { Response, NextFunction } from "express";
+import { ConversationService } from "../services";
+import { MessageService } from "../services/message.service";
+import { MessageFileDto } from "../dtos/message.dto";
+import { MessageRequest } from "./types";
+import { FileService } from "../services/files.service";
+import { Error } from "../models";
 
-import {
-  getStorage,
-  ref,
-  getDownloadURL,
-  uploadBytesResumable,
-} from "firebase/storage";
-
-import { Conversation, Message, MessageModel } from "../models";
-
-// todo move to fireBaseStorageService
-const storage = getStorage();
-
-// todo move files actions to separate folder
-//todo try to specify file types
-const uploadFile = async (file: any) => {
-  // todo move `files/` part to const
-  // todo after specifient file type you can avoid using '!' symbol
-  const storageRef = ref(storage, `files/${file!.originalname}`);
-  
-  // todo create type for firebase metadata
-  const metadata = {
-    contentType: file.mimetype,
-  };
-
-  // todo move to firebase service
-  const snapshot = await uploadBytesResumable(
-    storageRef,
-    file.buffer,
-    metadata
-  );
-
-  const url = await getDownloadURL(snapshot.ref);
-
-  // todo specify type for return object
-  return { url, type: file.mimetype, name: file.originalname };
-};
-
-// todo specify files type
-const uploadFiles = async (files: any) => {
-  const imagePromises = Array.from(files, (file) => uploadFile(file));
-
-  // todo remove unnecessary var
-  const fileRes = await Promise.all(imagePromises);
-  return fileRes;
-};
+const conversationService = new ConversationService();
+const messageService = new MessageService();
+const fileService = new FileService();
 
 export const sendMessage = async (
-  req: Request,
+  req: MessageRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    if(!req.body.auth){
-      return res.status(401).end();
-    }
-
     const userId = req.body.auth.userId;
     const memberId = req.body.id;
     const text = req.body.text;
-    const files = req.files!;
-    // todo create type
-    let imgUrls: { url: string; type: string; name: string }[] = [];
+    const files: Express.Multer.File[] = req.files as Express.Multer.File[];
+    const members = [memberId, userId].sort();
+
+    let fileUrls: MessageFileDto[] = [];
 
     if (files) {
-      imgUrls = await uploadFiles(files);
+      fileUrls = await fileService.uploadFilesAsync(files);
     }
 
-    // todo move to conversationService.getOne([memberId, userId].sort());
-    const conversationSnapshot = await Conversation.where(
-      "members",
-      "==",
-      [memberId, userId].sort()
-    ).get();
+    const conversation = await conversationService.getByMembersAsync(members);
 
-    const conversationId = await conversationSnapshot.docs[0].data().id;
+    if (!conversation) {
+      return res.status(200).json([]);
+    }
 
-    // todo move to messageService
-    const snapshot = await Message.add(
-      Object.assign({}, new MessageModel(conversationId, userId, text, imgUrls))
+    const message = await messageService.addAsync(
+      conversation.id,
+      userId,
+      text,
+      fileUrls
     );
-
-    const message = (await snapshot.get()).data();
 
     return res.status(200).json(message);
   } catch (err) {
-    console.log(err);
     next(err);
   }
 };
 
 export const getMessages = async (
-  // todo create type for Request and ovverride body etc...
-  req: Request,
+  req: MessageRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    if(!req.body.auth){
-      return res.status(401).end();
-    }
-
     const userId = req.body.auth.userId;
     const memberId = req.params.id;
+    const members = [memberId, userId].sort();
 
-    // todo to conversationService
-    const conversationSnapshot = await Conversation.where(
-      "members",
-      "==",
-      [memberId, userId].sort()
-    ).get();
+    const conversation = await conversationService.getByMembersAsync(members);
 
-    const conversationId = await conversationSnapshot.docs[0].data().id;
+    if (!conversation) {
+      return res.status(200).json([]);
+    }
 
-    // todo to messageService
-    const snapshot = await Message.where(
-      "conversationId",
-      "==",
-      conversationId
-    ).get();
-
-    const messages = snapshot.docs.map((doc) => {
-      return doc.data();
-    });
-
-    // todo what number?
-    const getNumber = (t: string) => +t.replace(/:/g, "");
-
-    // to messageService
-    messages.sort(
-      ({ createdAt: a }, { createdAt: b }) => getNumber(a) - getNumber(b)
+    const messages = await messageService.getAllByConversationIdAsync(
+      conversation.id
     );
+
+    if (!messages) {
+      return res.status(200).json([]);
+    }
+
+    messageService.sortMessagesByDate(messages);
 
     return res.status(200).json(messages);
   } catch (err) {
-    console.log(err);
     next(err);
   }
 };
 
 export const updateMessage = async (
-  // specify types
-  req: Request,
+  req: MessageRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    if(!req.body.auth){
-      return res.status(401).end();
-    }
-
-    const messageId = req.body.messageId;
-    const newText = req.body.text;
-
-    // todo to messageService
-    const snapshot = await Message.where("id", "==", messageId).get();
-    await snapshot.docs[0].ref.update({
-      text: newText,
-    });
+    await messageService.updateById(req.body.messageId, req.body.text);
 
     res.status(200).end();
   } catch (err) {
-    console.log(err);
     next(err);
   }
 };
 
 export const deleteMessage = async (
-  req: Request,
+  req: MessageRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    if(!req.body.auth){
-      return res.status(401).end();
-    }
-
-    // todo remove this var
-    const messageId = req.params.id;
-    console.log(messageId);
-    // todo to messageService
-    const snapshot = await Message.where("id", "==", messageId).get();
-    
-    await snapshot.docs[0].ref.delete();
+    await messageService.deleteById(req.params.id);
 
     res.status(200).end();
   } catch (err) {
-    console.log(err);
     next(err);
   }
 };

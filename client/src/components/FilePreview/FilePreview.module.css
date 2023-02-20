@@ -1,38 +1,46 @@
-.preview_img{
-    margin-right: 1rem;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
+.preview_main_container {
+  height: 90px;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  background: transparent;
+  overflow-y: scroll;
+}
+
+.preview_img {
+  margin-right: 1rem;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
 }
 
 .preview_close_btn {
-    position: absolute;
-    border: none;
-    background: transparent;
-    left: 50%;
-    bottom: 80%;
-    display: none;
+  position: absolute;
+  border: none;
+  background: transparent;
+  left: 50%;
+  bottom: 80%;
+  display: none;
 }
 
 .preview_container {
-    position: relative;
-    display: flex;
+  position: relative;
+  display: flex;
 }
 
 .preview_close_btn_file {
-    position: absolute;
-    border: none;
-    background: transparent;
-    left: 80%;
-    bottom: 100%;
-    display: none;
+  position: absolute;
+  border: none;
+  background: transparent;
+  left: 80%;
+  bottom: 100%;
+  display: none;
 }
 
-
-.preview_container:hover .preview_close_btn{
-    display: block;
+.preview_container:hover .preview_close_btn {
+  display: block;
 }
 
-.preview_container:hover .preview_close_btn_file{
-    display: block;
+.preview_container:hover .preview_close_btn_file {
+  display: block;
 }

@@ -1,20 +1,19 @@
 import { Menu, MenuItem, Typography } from "@mui/material";
 import { Box } from "@mui/system";
-import React from "react";
+import React, { useRef } from "react";
 import { useDispatch } from "react-redux";
 import { messageActions } from "../../store/message-slice";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
-import classes from './Message.module.css';
-
-// todo you already have somewhere this types. move to consts
-const allowedFileTypes = ["image/png", "image/jpeg", "image/gif"];
+import classes from "./Message.module.css";
+import { allowedFileTypes } from "../../constants/file.constants";
+import { FileDto } from "../../dtos/file.dto";
 
 type Props = {
   type: "in" | "out";
   text: string;
   createdAt: string;
   id: string;
-  files: { url: string; type: string; name: string }[];
+  files: FileDto[];
   onDeleteMessage: (messageId: string) => void;
 };
 
@@ -30,6 +29,7 @@ const Message: React.FC<Props> = ({
   const background =
     type === "out" ? "rgba(142, 215, 255, 0.58)" : "rgba(179, 254, 164, 0.58)";
   const dispatch = useDispatch();
+  const messageRef = useRef<HTMLParagraphElement>(null);
 
   const [contextMenu, setContextMenu] = React.useState<{
     mouseX: number;
@@ -59,8 +59,7 @@ const Message: React.FC<Props> = ({
 
   const handleEdit = () => {
     setContextMenu(null);
-    // todo pass textContent from parrent component. use linkRef instead of getElemById
-    const message = document.getElementById(id)?.textContent;
+    const message = messageRef.current!.textContent;
     dispatch(messageActions.edit({ message, id }));
   };
 
@@ -82,24 +81,38 @@ const Message: React.FC<Props> = ({
           cursor: type === "out" ? "context-menu" : "arrow",
         }}
       >
-        <Typography paragraph id={id}>
+        <Typography paragraph id={id} ref={messageRef}>
           {text}
         </Typography>
         {files.length !== 0 && (
-          <Box sx={{
-            display: 'flex',
-          }}>
+          <Box
+            sx={{
+              display: "flex",
+            }}
+          >
             {files.map((file) => {
               if (allowedFileTypes.includes(file.type)) {
                 return (
-                  <a key={file.url} target="_blank" href={file.url} rel="noreferrer" className={classes.msg_img}>
+                  <a
+                    key={file.url}
+                    target="_blank"
+                    href={file.url}
+                    rel="noreferrer"
+                    className={classes.msg_img}
+                  >
                     <img src={file.url} alt="" />
                   </a>
                 );
               }
 
               return (
-                <a key={file.url}  target="_blank" href={file.url} rel="noreferrer" className={classes.msg_file}>
+                <a
+                  key={file.url}
+                  target="_blank"
+                  href={file.url}
+                  rel="noreferrer"
+                  className={classes.msg_file}
+                >
                   <InsertDriveFileIcon />
                   {file.name}
                 </a>

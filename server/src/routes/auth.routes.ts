@@ -4,4 +4,4 @@ import { auth } from "../middleware";
 
 export const authRoutes = express.Router();
 
-authRoutes.get('/', auth, getAuthenticationStatus);
+authRoutes.get('/', auth, <any>getAuthenticationStatus);

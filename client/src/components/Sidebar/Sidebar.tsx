@@ -14,8 +14,11 @@ import {
   conversationActions,
 } from "../../store/conversation-slice";
 import CircularProgress from "@mui/material/CircularProgress";
+import { showErrorNotification } from "../../util/notifications";
+import { ConversationService } from "../../services/conversation.service";
 
 const drawerWidth = 340;
+const conversationService = new ConversationService();
 
 const Sidebar = () => {
   const conversations = useSelector<RootState, Conversation[]>(
@@ -29,30 +32,32 @@ const Sidebar = () => {
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  useEffect(() => {
-    const getConverstions = async () => {
-      setIsLoading(true);
-      try {
-        // todo conversationService
-        const url = "http://localhost:8080/conversation/all";
-        const res = await fetch(url, {
-          credentials: "include",
-        });
+  const getConverstions = async () => {
+    setIsLoading(true);
 
-        if (res.status !== 200) {
-          const error = await res.json();
-          throw new Error(error.message);
-        }
+    try {
+      const res = await conversationService.getAll();
 
-        const conversations = await res.json();
-        dispatch(conversationActions.setConversations(conversations));
-        setIsLoading(false);
-      } catch (err) {
-        setIsLoading(false);
-        console.log(err);
+      if (res.status !== 200) {
+        const error = await res.json();
+
+        throw new Error(error.message);
       }
-    };
 
+      const conversations = await res.json();
+
+      dispatch(conversationActions.setConversations(conversations));
+      setIsLoading(false);
+    } catch (err) {
+      setIsLoading(false);
+      
+      if (err instanceof Error) {
+        showErrorNotification(err.message);
+      }
+    }
+  };
+
+  useEffect(() => {
     getConverstions();
   }, [dispatch]);
 

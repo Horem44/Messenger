@@ -1,8 +1,8 @@
 import { db } from "../../configs";
 import uniqid from "uniqid";
+import { CollectionReference } from "../repositories";
 
-// todo rename folder 'models' to 'entities'. move there db entities
-export class ConversationModel {
+export class ConversationEntity {
   members: string[];
   id: string;
 
@@ -12,4 +12,6 @@ export class ConversationModel {
   }
 }
 
-export const Conversation = db.collection("Conversations");
+export const Conversation = <CollectionReference<ConversationEntity>>(
+  db.collection("Conversations")
+);

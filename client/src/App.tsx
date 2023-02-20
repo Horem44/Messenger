@@ -22,7 +22,6 @@ function App() {
       });
 
       if (res.status === 401) {
-        console.log("No auth");
         navigate("login");
         return;
       }

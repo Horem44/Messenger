@@ -1,6 +1,6 @@
-import { Button, Input, TextField } from "@mui/material";
+import { Button, TextField } from "@mui/material";
 import { Box } from "@mui/system";
-import React, { ChangeEvent, KeyboardEvent, useState } from "react";
+import React, { KeyboardEvent } from "react";
 import SendIcon from "@mui/icons-material/Send";
 import FileInput from "../FIleInput/FileInput";
 import { Divider } from "@mui/material";
@@ -9,11 +9,9 @@ import { RootState } from "../../store";
 import CheckIcon from "@mui/icons-material/Check";
 import { messageActions } from "../../store/message-slice";
 import CircularProgress from "@mui/material/CircularProgress";
-import e from "express";
 
 interface Props {
   onSetFile: (file: File) => void;
-  files: File[];
   onSendMessage: (currentConversation: string) => void;
   onUpdateMessage: (messageId: string) => void;
   isMsgLoading: boolean;
@@ -21,8 +19,6 @@ interface Props {
 
 const MessageInput: React.FC<Props> = ({
   onSetFile,
-  // todo remove
-  files,
   onSendMessage,
   onUpdateMessage,
   isMsgLoading,
@@ -48,10 +44,16 @@ const MessageInput: React.FC<Props> = ({
     dispatch(messageActions.setMessage(e.target.value));
   };
 
-  const sendOnEnter = (event: KeyboardEvent) => {
+  const sendOrUpdateOnEnter = (event: KeyboardEvent) => {
     if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      onSendMessage(currentConversation);
+      if (!isEditing) {
+        event.preventDefault();
+        onSendMessage(currentConversation);
+      } else {
+        event.preventDefault();
+        onUpdateMessage(messageToUpdateId);
+        dispatch(messageActions.finishEditing());
+      }
     }
   };
 
@@ -70,7 +72,7 @@ const MessageInput: React.FC<Props> = ({
             <FileInput onSetFile={onSetFile} />
             <TextField
               multiline
-              onKeyDown={sendOnEnter}
+              onKeyDown={sendOrUpdateOnEnter}
               maxRows={4}
               type="text"
               placeholder="Write a message..."

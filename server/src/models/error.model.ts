@@ -1,4 +1,3 @@
-// todo stays in model
 export class Error {
     message!: string;
     status!: number;

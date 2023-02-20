@@ -5,63 +5,31 @@ import AlternateEmailIcon from "@mui/icons-material/AlternateEmail";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { authActions } from "../../store/auth-slice";
-import { showErrorNotification, showSuccessNotification } from "../../util/notifications";
+import {
+  showErrorNotification,
+  showSuccessNotification,
+} from "../../util/notifications";
+import { UserService } from "../../services/user.service";
+import { UserDto } from "../../dtos/user.dto";
+import { RegisterLoginValidationService } from "../../services/register-login-validation.service";
 
-const tagRegExp = /^[a-z0-9]+$/i;
+const registerLoginService = new UserService();
 
 type Props = {
   type: "login" | "register";
 };
 
-interface validationState {
-  isPasswordValid: boolean;
-  isTagValid: boolean;
-}
-
-const initialValidationState: validationState = {
-  isPasswordValid: true,
-  isTagValid: true,
-};
-
-// todo formValidationService
-interface action {
-  type:
-    | "PASSWORD_IS_NOT_VALID"
-    | "TAG_IS_NOT_VALID"
-    | "PASSWORD_IS_VALID"
-    | "TAG_IS_VALID";
-}
-
-// todo to formValidationService
-const validationReducer = (state: validationState, action: action) => {
-  switch (action.type) {
-    case "PASSWORD_IS_VALID":
-      return { ...state, isPasswordValid: true };
-    case "TAG_IS_VALID":
-      return { ...state, isTagValid: true };
-
-    case "PASSWORD_IS_NOT_VALID":
-      return { ...state, isPasswordValid: false };
-    case "TAG_IS_NOT_VALID":
-      return { ...state, isTagValid: false };
-    default:
-      return state;
-  }
-};
-
-// todo rename to proper name
-const Form: React.FC<Props> = ({ type }: Props) => {
+const RegisterLogin: React.FC<Props> = ({ type }: Props) => {
   const dispatchAuth = useDispatch();
   const navigate = useNavigate();
   const [validationState, dispatch] = useReducer(
-    validationReducer,
-    initialValidationState
+    RegisterLoginValidationService.validationReducer,
+    RegisterLoginValidationService.initialValidationState
   );
 
   const tagInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
-  // todo to formValidationService
   const isFormValid = (password: string, tag: string | undefined) => {
     if (password.trim().length === 0 || password.length < 6) {
       dispatch({ type: "PASSWORD_IS_NOT_VALID" });
@@ -74,7 +42,7 @@ const Form: React.FC<Props> = ({ type }: Props) => {
       return true;
     }
 
-    if (tag!.trim().length === 0 || !tagRegExp.test(tag!)) {
+    if (tag!.trim().length === 0 || !/^[a-z0-9]+$/i.test(tag!)) {
       dispatch({ type: "TAG_IS_NOT_VALID" });
       return false;
     } else {
@@ -86,7 +54,7 @@ const Form: React.FC<Props> = ({ type }: Props) => {
 
   const submitHandler = async () => {
     const password = passwordInputRef.current!.value;
-    const tag = tagInputRef.current?.value;
+    const tag = tagInputRef.current!.value;
 
     const isValid = isFormValid(password, tag);
 
@@ -94,50 +62,35 @@ const Form: React.FC<Props> = ({ type }: Props) => {
       return;
     }
 
-    const path = type === "login" ? "login" : "register";
-
-    // todo consts
-    const url = "http://localhost:8080/user/" + path;
-
-    // todo use classes
-    const userData = {
-      tag,
-      password,
-    };
+    const userDto = new UserDto(tag, password);
 
     try {
-      // todo move to userService that extends apiService
-      const res = await fetch(url, {
-        method: "post",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(userData),
-      });
+      let res: Response;
+
+      if (type === "login") {
+        res = await registerLoginService.loginUser(userDto);
+      } else {
+        res = await registerLoginService.registerUser(userDto);
+      }
 
       if (res.status !== 200) {
         const error = await res.json();
-
-        console.log(error);
         throw new Error(error.message);
       }
 
       const user = await res.json();
-      
+
       dispatchAuth(authActions.setCurrentUser(user));
       dispatchAuth(authActions.login());
       showSuccessNotification("Successfuly " + type);
-      // todo move string to consts
       navigate("/messenger");
     } catch (err) {
-      if(err instanceof Error){
+      if (err instanceof Error) {
         showErrorNotification(err.message);
       }
     }
   };
 
-  // todo try to move all template logic to separate file e.g. Form.html.
   return (
     <Box
       sx={{
@@ -223,4 +176,4 @@ const Form: React.FC<Props> = ({ type }: Props) => {
   );
 };
 
-export default Form;
+export default RegisterLogin;

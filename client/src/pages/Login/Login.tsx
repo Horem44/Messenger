@@ -1,10 +1,9 @@
-import { Box, Input } from '@mui/material'
 import React from 'react'
-import Form from '../../components/Form/Form'
+import RegisterLogin from '../../components/RegisterLogin/RegisterLogin'
 
 const Login = () => {
   return (
-    <Form type='login'/>
+    <RegisterLogin type='login'/>
   )
 }
 

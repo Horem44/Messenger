@@ -4,7 +4,11 @@ import { auth } from "../middleware";
 
 export const messageRoutes = express.Router();
 
-messageRoutes.post('/send', auth, sendMessage);
-messageRoutes.get('/:id', auth, getMessages);
-messageRoutes.post('/update', auth, updateMessage);
-messageRoutes.delete('/:id', auth, deleteMessage);
+messageRoutes.post('/send', auth, <any>sendMessage);
+
+messageRoutes.get('/:id', auth, <any>getMessages);
+
+messageRoutes.post('/update', auth, <any>updateMessage);
+
+messageRoutes.delete('/:id', auth, <any>deleteMessage);
+

@@ -1,14 +1,17 @@
-// todo move to models
-export interface registerUserBody extends Express.Request {
-  body: {
-    tag: string;
-    password: string;
-  };
+import { Auth } from ".";
+
+export class UserBody {
+  tag: string;
+  password: string;
+  auth: Auth;
+
+  constructor(tag: string, password: string, auth: Auth) {
+    this.tag = tag;
+    this.password = password;
+    this.auth = auth;
+  }
 }
 
-export interface loginUserBody extends Express.Request {
-  body: {
-    tag: string;
-    password: string;
-  };
+export interface UserRequest extends Express.Request {
+  body: UserBody;
 }
