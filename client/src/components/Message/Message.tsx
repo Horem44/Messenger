@@ -1,6 +1,6 @@
 import { Menu, MenuItem, Typography } from "@mui/material";
 import { Box } from "@mui/system";
-import React, { useRef } from "react";
+import React, { Fragment, useRef } from "react";
 import { useDispatch } from "react-redux";
 import { messageActions } from "../../store/message-slice";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
@@ -91,31 +91,30 @@ const Message: React.FC<Props> = ({
             }}
           >
             {files.map((file) => {
-              if (allowedFileTypes.includes(file.type)) {
-                return (
-                  <a
-                    key={file.url}
-                    target="_blank"
-                    href={file.url}
-                    rel="noreferrer"
-                    className={classes.msg_img}
-                  >
-                    <img src={file.url} alt="" />
-                  </a>
-                );
-              }
-
               return (
-                <a
-                  key={file.url}
-                  target="_blank"
-                  href={file.url}
-                  rel="noreferrer"
-                  className={classes.msg_file}
-                >
-                  <InsertDriveFileIcon />
-                  {file.name}
-                </a>
+                <Fragment key={Math.random()}>
+                  {allowedFileTypes.includes(file.type) && (
+                    <a
+                      target="_blank"
+                      href={file.url}
+                      rel="noreferrer"
+                      className={classes.msg_img}
+                    >
+                      <img src={file.url} alt="" />
+                    </a>
+                  )}
+                  {!allowedFileTypes.includes(file.type) && (
+                    <a
+                      target="_blank"
+                      href={file.url}
+                      rel="noreferrer"
+                      className={classes.msg_file}
+                    >
+                      <InsertDriveFileIcon />
+                      {file.name}
+                    </a>
+                  )}
+                </Fragment>
               );
             })}
           </Box>

@@ -12,7 +12,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store";
 import { Link } from "react-router-dom";
 import classes from "./Header.module.css";
-import { logoutRequest } from "../../store/auth-slice";
+import { ICurrentUser, logoutRequest } from "../../store/auth-slice";
 import { AnyAction } from "@reduxjs/toolkit";
 
 const Header = () => {
@@ -32,6 +32,10 @@ const Header = () => {
     setAnchorEl(null);
   };
 
+  const currentUser = useSelector<RootState, ICurrentUser>(
+    (state) => state.auth.currentUser
+  );
+
   return (
     <Box
       sx={{ flexGrow: 1 }}
@@ -50,6 +54,11 @@ const Header = () => {
             React Messenger
           </Typography>
           {isAuth && <FriendSearchBar />}
+            {currentUser.tag && <Typography sx={{
+              marginLeft: '1rem'
+            }}>
+              Logined as {currentUser.tag}
+            </Typography>}
           <div>
             <IconButton
               sx={{

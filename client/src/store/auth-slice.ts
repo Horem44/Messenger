@@ -38,6 +38,7 @@ const authSlice = createSlice({
 export const logoutRequest = () => {
   return async (dispatch: any) => {
       dispatch(authActions.logout());
+      dispatch(authActions.setCurrentUser({}));
       try{
           const res = await fetch('http://localhost:8080/user/logout', {credentials: 'include'});
 
